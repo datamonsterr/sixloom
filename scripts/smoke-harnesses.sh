@@ -17,8 +17,10 @@ mkdir -p "$HOME/.gemini" "$CODEX_HOME"
 echo "== installing agent CLIs into $WORK/clis"
 (cd "$WORK" && mkdir clis && cd clis && npm i -s --no-fund --no-audit @openai/codex opencode-ai @google/gemini-cli >/dev/null)
 NPX="$WORK/clis/node_modules/.bin"
-command -v kimi >/dev/null || uv tool install -q kimi-cli
-KIMI_PY="$(dirname "$(readlink -f "$(command -v kimi)")")/python"
+# HOME is overridden above, so resolve kimi through uv's tool dir rather than PATH.
+KIMI_PY="$(uv tool dir)/kimi-cli/bin/python"
+[ -x "$KIMI_PY" ] || uv tool install -q kimi-cli
+[ -x "$KIMI_PY" ] || { echo "kimi-cli python not found at $KIMI_PY"; exit 1; }
 
 P="$WORK/demo"
 "$BIN" init "$P" --yes --agents claude,codex,opencode,gemini,kimi --frontend react-vite --docs fumadocs --design claude >/dev/null
