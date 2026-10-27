@@ -9,9 +9,23 @@ harnesses = [
     "codex",
 ]
 
-[frontend]
+[[interfaces]]
+id = "web"
+kind = "web"
 framework = "react-vite"
 ui_kit = "none"
+path = "apps/web"
+api_client = "src/api"
+mocks = "src/mocks"
+
+[system]
+pattern = "monolith"
+
+[[services]]
+id = "api"
+kind = "http-api"
+stack = "hono-node"
+path = "apps/api"
 
 [docs]
 engine = "fumadocs"

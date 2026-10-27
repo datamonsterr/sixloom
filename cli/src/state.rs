@@ -27,7 +27,11 @@ pub struct Loom {
 
 /// Product track first (spec → design → preview), then the engineering track
 /// derives data, system and API from the approved preview.
-/// `{content}` expands to `docs.content_dir` from sixloom.toml.
+///
+/// Paths are tokens resolved from sixloom.toml, so the layout follows the project's stack:
+/// `{content}` docs.content_dir · `{ui}` every interface folder · `{ui:api}` / `{ui:mocks}` /
+/// `{ui:preview}` each interface's API client, mocks and preview guide · `{svc}` every service
+/// folder · `{rules}` the agents' instruction files.
 pub const LOOMS: &[Loom] = &[
     Loom {
         id: "spec",
@@ -54,7 +58,7 @@ pub const LOOMS: &[Loom] = &[
         reviewer: "product",
         deps: &["design"],
         inputs: &["spec/SPEC.md", "design/"],
-        outputs: &["apps/web/"],
+        outputs: &["{ui}"],
     },
     Loom {
         id: "data",
@@ -65,8 +69,8 @@ pub const LOOMS: &[Loom] = &[
         inputs: &[
             "spec/SPEC.md",
             "design/SCREENS.md",
-            "apps/web/src/api/",
-            "apps/web/src/mocks/",
+            "{ui:api}",
+            "{ui:mocks}",
         ],
         outputs: &["{content}/architecture/data-model.mdx"],
     },
@@ -77,7 +81,13 @@ pub const LOOMS: &[Loom] = &[
         reviewer: "engineer",
         deps: &["data"],
         inputs: &["spec/SPEC.md", "{content}/architecture/data-model.mdx"],
-        outputs: &["{content}/architecture/system-design.mdx", "docs/diagrams/"],
+        // The loom records the pattern and services in sixloom.toml, which rewrites the rules.
+        outputs: &[
+            "{content}/architecture/system-design.mdx",
+            "docs/diagrams/",
+            "sixloom.toml",
+            "{rules}",
+        ],
     },
     Loom {
         id: "api",
@@ -90,8 +100,8 @@ pub const LOOMS: &[Loom] = &[
             "design/SCREENS.md",
             "{content}/architecture/data-model.mdx",
             "{content}/architecture/system-design.mdx",
-            "apps/web/src/api/",
-            "apps/web/src/mocks/",
+            "{ui:api}",
+            "{ui:mocks}",
         ],
         outputs: &["contracts/openapi.yaml", "docs/"],
     },
@@ -105,10 +115,11 @@ pub const LOOMS: &[Loom] = &[
             "spec/SPEC.md",
             "design/SCREENS.md",
             "contracts/openapi.yaml",
-            "apps/web/PREVIEW.md",
+            "{ui:preview}",
         ],
         outputs: &[
             "tests/",
+            "{svc}",
             ".github/workflows/",
             "justfile",
             ".sixloom/tests.lock",
@@ -125,7 +136,7 @@ pub const LOOMS: &[Loom] = &[
             "contracts/openapi.yaml",
             ".sixloom/tests.lock",
         ],
-        outputs: &["apps/", ".sixloom/runs/"],
+        outputs: &["{ui}", "{svc}", ".sixloom/runs/"],
     },
     Loom {
         id: "validate",
@@ -137,7 +148,7 @@ pub const LOOMS: &[Loom] = &[
             "spec/SPEC.md",
             "contracts/openapi.yaml",
             ".sixloom/tests.lock",
-            "apps/web/PREVIEW.md",
+            "{ui:preview}",
         ],
         outputs: &[".sixloom/runs/"],
     },
@@ -273,8 +284,25 @@ impl State {
     }
 }
 
-pub fn expand(p: &str, cfg: &Config) -> String {
-    p.replace("{content}", &cfg.docs.content_dir)
+/// Resolve a loom path token into project paths (zero or more) using sixloom.toml.
+pub fn expand(p: &str, cfg: &Config) -> Vec<String> {
+    let ui = &cfg.interfaces;
+    let dir = |s: &str| format!("{}/", s.trim_end_matches('/'));
+    match p {
+        "{ui}" => ui.iter().map(|i| dir(&i.path)).collect(),
+        "{ui:api}" => ui.iter().map(|i| i.api_client_path()).collect(),
+        "{ui:mocks}" => ui.iter().map(|i| i.mocks_path()).collect(),
+        "{ui:preview}" => ui.iter().map(|i| i.preview_doc()).collect(),
+        "{svc}" => cfg.services.iter().map(|s| dir(&s.path)).collect(),
+        "{rules}" => crate::harness::targets(&cfg.agents.harnesses)
+            .map(|(_, files)| files.into_iter().map(String::from).collect())
+            .unwrap_or_default(),
+        _ => vec![p.replace("{content}", &cfg.docs.content_dir)],
+    }
+}
+
+pub fn expand_all(paths: &[&str], cfg: &Config) -> Vec<String> {
+    paths.iter().flat_map(|p| expand(p, cfg)).collect()
 }
 
 const IGNORED: &[&str] = &[
@@ -340,7 +368,7 @@ pub const SPEC: &str = "spec/SPEC.md";
 /// so stale looms can say which feature changed.
 pub fn input_hashes(root: &Path, cfg: &Config, l: &Loom) -> BTreeMap<String, String> {
     let mut out = BTreeMap::new();
-    for p in l.inputs.iter().map(|p| expand(p, cfg)) {
+    for p in expand_all(l.inputs, cfg) {
         if p == SPEC {
             if let Ok(text) = fs::read_to_string(root.join(SPEC)) {
                 out.extend(spec_sections(&text));
@@ -383,7 +411,14 @@ pub fn changed_inputs(root: &Path, cfg: &Config, l: &Loom, st: &State) -> Vec<St
     if recorded.is_empty() {
         return vec![];
     }
-    let now = input_hashes(root, cfg, l);
+    // Keys are compared without a trailing slash, so `src/api` and `src/api/` are one input.
+    let norm = |m: BTreeMap<String, String>| -> BTreeMap<String, String> {
+        m.into_iter()
+            .map(|(k, v)| (k.trim_end_matches('/').to_string(), v))
+            .collect()
+    };
+    let recorded = norm(recorded);
+    let now = norm(input_hashes(root, cfg, l));
     let mut changed: Vec<String> = now
         .iter()
         .filter(|(p, h)| recorded.get(*p) != Some(*h))

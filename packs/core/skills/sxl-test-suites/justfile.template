@@ -1,5 +1,8 @@
 # sixloom task runner: humans, agents and CI all call these targets.
-# Replace the <...> commands with the ones for your stack (see system-design ADRs).
+# One block of recipes per interface and per service from `sixloom layout`; folders below
+# are examples (interface `web` at apps/web, service `api` at services/api). Replace the
+# <...> commands with your stack's (see system-design ADRs). Keep the target names:
+# skills, CI and `sixloom` call preview, dev, lint, typecheck, unit, contract, e2e, ci-fast, ci.
 
 set dotenv-load := true
 
@@ -9,12 +12,12 @@ default:
 # ---- dev ---------------------------------------------------------------
 # Front end on mocks: the product preview
 preview:
-    cd apps/web && VITE_API_MODE=mock <pnpm dev>
+    cd apps/web && <npm run preview>          # one line per interface; TUI: SXL_API_MODE=mock cargo run -p tui
 
 # Full stack: web against the real API
 dev:
     <docker compose up -d db>
-    <cd apps/api && run dev> &
+    <cd services/api && run dev> &
     cd apps/web && VITE_API_MODE=real <pnpm dev>
 
 docs:
@@ -23,15 +26,15 @@ docs:
 # ---- checks ------------------------------------------------------------
 lint:
     cd apps/web && <pnpm lint>
-    cd apps/api && <lint>
+    cd services/api && <lint>
 
 typecheck:
     cd apps/web && <pnpm typecheck>
-    cd apps/api && <typecheck>
+    cd services/api && <typecheck>
 
 unit:
     cd apps/web && <pnpm test --run>
-    cd apps/api && <test>
+    cd services/api && <test>
 
 contract:
     <start api in test mode> && <pnpm -C tests playwright test contract integration>

@@ -40,19 +40,20 @@ Visual direction, design systems and screen generation with Claude Design or Goo
 
 | Skill | What it does | Installed when | Source |
 |---|---|---|---|
-| `frontend-design` | Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. | `always` | [anthropics/skills](https://github.com/anthropics/skills/tree/dbd4588f9e1033efb41dad4bef2f7947c8993d44/skills/frontend-design) · Apache-2.0 |
-| `web-design-guidelines` | Review UI code for Web Interface Guidelines compliance. | `always` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills/tree/6ec269328bc400712ee225a173a14b6b29128df7/skills/web-design-guidelines) · MIT |
+| `frontend-design` | Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. | `kind:web`, `kind:mobile`, `kind:desktop` | [anthropics/skills](https://github.com/anthropics/skills/tree/dbd4588f9e1033efb41dad4bef2f7947c8993d44/skills/frontend-design) · Apache-2.0 |
+| `web-design-guidelines` | Review UI code for Web Interface Guidelines compliance. | `kind:web`, `kind:desktop` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills/tree/6ec269328bc400712ee225a173a14b6b29128df7/skills/web-design-guidelines) · MIT |
 | `stitch` | Use when the user invokes /stitch, turns an existing app or codebase into Stitch designs, captures or uploads screens, generates screens or variants, edits screens, extracts or uploads DESIGN.md, manages design systems, reviews a running app against DESIGN.md, or runs stitch CLI commands. | `design:stitch` | [`@google/stitch@0.12.0`](https://www.npmjs.com/package/@google/stitch) · Apache-2.0 |
 | `taste-design` | Semantic Design System Skill for Google Stitch. | `design:stitch` | [google-labs-code/stitch-skills](https://github.com/google-labs-code/stitch-skills/tree/0337446dadde6f8c94210444e2aa9d546126480f/plugins/stitch-utilities/skills/taste-design) · Apache-2.0 |
 
 ## Front-end frameworks (`frontend`)
 
-Framework-specific guidance for React, Next.js, Vue, Nuxt, Vite, Svelte and shadcn/ui.
+Framework-specific guidance for web (React, Next.js, Vue, Nuxt, Vite, Svelte, shadcn/ui) and mobile (React Native) interfaces.
 
 | Skill | What it does | Installed when | Source |
 |---|---|---|---|
 | `vercel-react-best-practices` | React and Next.js performance optimization guidelines from Vercel Engineering. | `frontend:react-vite`, `frontend:nextjs` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills/tree/6ec269328bc400712ee225a173a14b6b29128df7/skills/react-best-practices) · MIT |
 | `vercel-composition-patterns` | . | `frontend:react-vite`, `frontend:nextjs` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills/tree/6ec269328bc400712ee225a173a14b6b29128df7/skills/composition-patterns) · MIT |
+| `vercel-react-native-skills` | . | `frontend:expo` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills/tree/6ec269328bc400712ee225a173a14b6b29128df7/skills/react-native-skills) · MIT |
 | `shadcn-ui` | Expert guidance for integrating and building applications with shadcn/ui components, including component discovery, installation, customization, and best practices. | `ui:shadcn` | [google-labs-code/stitch-skills](https://github.com/google-labs-code/stitch-skills/tree/0337446dadde6f8c94210444e2aa9d546126480f/plugins/stitch-build/skills/shadcn-ui) · Apache-2.0 |
 | `vite` | Vite build tool configuration, plugin API, SSR, and Vite 8 Rolldown migration. | `frontend:react-vite`, `frontend:vue` | [antfu/skills](https://github.com/antfu/skills/tree/8886fe2d385d3644cbb47e46ae9cb1cf09307d3b/skills/vite) · MIT |
 | `vue` | Vue 3 Composition API, script setup macros, reactivity system, and built-in components. | `frontend:vue`, `frontend:nuxt` | [antfu/skills](https://github.com/antfu/skills/tree/8886fe2d385d3644cbb47e46ae9cb1cf09307d3b/skills/vue) · MIT |
@@ -76,6 +77,6 @@ Browser automation and end-to-end testing with Playwright, and unit testing with
 
 | Skill | What it does | Installed when | Source |
 |---|---|---|---|
-| `playwright-cli` | Automate browser interactions, test web pages and work with Playwright tests. | `always` | [microsoft/playwright-cli](https://github.com/microsoft/playwright-cli/tree/b1a5903c5b633b8c9f843ad7b629c2a78437040c/skills/playwright-cli) · Apache-2.0 |
+| `playwright-cli` | Automate browser interactions, test web pages and work with Playwright tests. | `kind:web`, `kind:desktop` | [microsoft/playwright-cli](https://github.com/microsoft/playwright-cli/tree/b1a5903c5b633b8c9f843ad7b629c2a78437040c/skills/playwright-cli) · Apache-2.0 |
 | `webapp-testing` | Toolkit for interacting with and testing local web applications using Playwright. | bank only | [anthropics/skills](https://github.com/anthropics/skills/tree/dbd4588f9e1033efb41dad4bef2f7947c8993d44/skills/webapp-testing) · Apache-2.0 |
-| `vitest` | Vitest fast unit testing framework powered by Vite with Jest-compatible API. | `frontend:react-vite`, `frontend:vue`, `frontend:nuxt`, `frontend:sveltekit` | [antfu/skills](https://github.com/antfu/skills/tree/8886fe2d385d3644cbb47e46ae9cb1cf09307d3b/skills/vitest) · MIT |
+| `vitest` | Vitest fast unit testing framework powered by Vite with Jest-compatible API. | `frontend:react-vite`, `frontend:vue`, `frontend:nuxt`, `frontend:sveltekit`, `frontend:ink` | [antfu/skills](https://github.com/antfu/skills/tree/8886fe2d385d3644cbb47e46ae9cb1cf09307d3b/skills/vitest) · MIT |

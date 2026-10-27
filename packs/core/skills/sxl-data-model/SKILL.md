@@ -7,8 +7,9 @@ description: The sixloom data model loom (data-first design). It derives entitie
 
 Follow the **sxl-loom** protocol. Loom ID: `data`. Run it in a new session.
 The context pack is `spec/SPEC.md`, `design/SCREENS.md` and the approved
-preview's data layer (`apps/web/src/api/`, `apps/web/src/mocks/`). The
-preview's fixtures show exactly what data the UI needs, so start from them.
+preview's data layer: each interface's API client and mocks, at the paths
+`sixloom layout` shows. The preview's fixtures show exactly what data the
+interfaces need, so start from them.
 
 sixloom is **data-first**: the backend is designed from the data the
 features need, not from endpoints or services. Get this right and the API and

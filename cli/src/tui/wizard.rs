@@ -31,7 +31,7 @@ const STEPS: &[(Step, &str)] = &[
     (Step::Mode, "Project"),
     (Step::Name, "Name"),
     (Step::Agents, "Coding agents"),
-    (Step::Frontend, "Front end"),
+    (Step::Frontend, "Interfaces"),
     (Step::UiKit, "UI kit"),
     (Step::Docs, "Docs engine"),
     (Step::Design, "Design tool"),
@@ -48,7 +48,20 @@ struct W<'a> {
     agents: Vec<bool>,
 }
 
+fn is_react(i: &config::Interface) -> bool {
+    matches!(i.framework.as_str(), "react-vite" | "nextjs")
+}
+
 impl W<'_> {
+    fn react_kit(&self) -> &str {
+        self.cfg
+            .interfaces
+            .iter()
+            .find(|i| is_react(i))
+            .map(|i| i.ui_kit.as_str())
+            .unwrap_or("none")
+    }
+
     fn step(&self) -> Step {
         STEPS[self.step].0
     }
@@ -88,8 +101,22 @@ impl W<'_> {
                     )
                 })
                 .collect(),
-            Step::Frontend => radio(config::FRONTENDS, &self.cfg.frontend.framework),
-            Step::UiKit => radio(config::UI_KITS, &self.cfg.frontend.ui_kit),
+            Step::Frontend => config::INTERFACES
+                .iter()
+                .map(|(kind, fw, label)| {
+                    let on = self
+                        .cfg
+                        .interfaces
+                        .iter()
+                        .any(|i| i.kind == *kind && i.framework == *fw);
+                    (
+                        format!("{kind}:{fw}"),
+                        format!("{label}  → apps/{kind}"),
+                        on,
+                    )
+                })
+                .collect(),
+            Step::UiKit => radio(config::UI_KITS, self.react_kit()),
             Step::Docs => radio(config::DOCS, &self.cfg.docs.engine),
             Step::Design => radio(config::DESIGNS, &self.cfg.design.tool),
             Step::Bank => vec![
@@ -123,12 +150,23 @@ impl W<'_> {
             }
             Step::Agents => self.agents[self.cursor] = !self.agents[self.cursor],
             Step::Frontend => {
-                self.cfg.frontend.framework = id.clone();
-                if !matches!(id.as_str(), "react-vite" | "nextjs") {
-                    self.cfg.frontend.ui_kit = "none".into();
+                let (kind, fw) = id.split_once(':').unwrap();
+                if let Some(pos) = self
+                    .cfg
+                    .interfaces
+                    .iter()
+                    .position(|i| i.kind == kind && i.framework == fw)
+                {
+                    self.cfg.interfaces.remove(pos);
+                } else if let Ok(i) = config::parse_interface(&id, &self.cfg.interfaces) {
+                    self.cfg.interfaces.push(i);
                 }
             }
-            Step::UiKit => self.cfg.frontend.ui_kit = id,
+            Step::UiKit => {
+                for i in self.cfg.interfaces.iter_mut().filter(|i| is_react(i)) {
+                    i.ui_kit = id.clone();
+                }
+            }
             Step::Docs => {
                 self.cfg.docs.content_dir = config::content_dir_for(&id).into();
                 self.cfg.docs.engine = id;
@@ -147,11 +185,7 @@ impl W<'_> {
             }
             self.step = next as usize;
             // The UI kit question only applies to React front ends.
-            let skip = self.step() == Step::UiKit
-                && !matches!(
-                    self.cfg.frontend.framework.as_str(),
-                    "react-vite" | "nextjs"
-                );
+            let skip = self.step() == Step::UiKit && !self.cfg.interfaces.iter().any(is_react);
             if !skip {
                 break;
             }
@@ -160,7 +194,7 @@ impl W<'_> {
             .options()
             .iter()
             .position(|o| o.2)
-            .filter(|_| self.step() != Step::Agents)
+            .filter(|_| !matches!(self.step(), Step::Agents | Step::Frontend))
             .unwrap_or(0);
     }
 }
@@ -219,6 +253,12 @@ fn event_loop(t: &mut DefaultTerminal, w: &mut W) -> Result<bool> {
             (Step::Agents, KeyCode::Char(' ')) => w.choose(),
             (Step::Agents, KeyCode::Enter) => {
                 if w.agents.iter().any(|a| *a) {
+                    w.advance(1);
+                }
+            }
+            (Step::Frontend, KeyCode::Char(' ')) => w.choose(),
+            (Step::Frontend, KeyCode::Enter) => {
+                if !w.cfg.interfaces.is_empty() {
                     w.advance(1);
                 }
             }
@@ -296,8 +336,8 @@ fn draw(f: &mut Frame, w: &W) {
             "Skills are copied into each agent's skills directory. Space toggles.",
         ),
         Step::Frontend => (
-            "Front-end framework",
-            "The preview is written in this framework and becomes the real front end.",
+            "Which interfaces does the product have?",
+            "Web, TUI, CLI, mobile or desktop; pick one or more (space toggles). The preview is built in each and becomes the real interface. Folders can be changed later with `sixloom layout`.",
         ),
         Step::UiKit => (
             "UI component kit",
@@ -350,9 +390,15 @@ fn draw(f: &mut Frame, w: &W) {
                 ("name", w.cfg.project.name.clone()),
                 ("agents", agents.join(", ")),
                 (
-                    "front end",
-                    format!("{} · {}", w.cfg.frontend.framework, w.cfg.frontend.ui_kit),
+                    "interfaces",
+                    w.cfg
+                        .interfaces
+                        .iter()
+                        .map(|i| format!("{} → {}/", i.label(), i.path))
+                        .collect::<Vec<_>>()
+                        .join(", "),
                 ),
+                ("services", "decided in the system-design loom".into()),
                 (
                     "docs",
                     format!("{} ({})", w.cfg.docs.engine, w.cfg.docs.content_dir),
@@ -373,7 +419,7 @@ fn draw(f: &mut Frame, w: &W) {
             }
         }
         _ => {
-            let multi = w.step() == Step::Agents;
+            let multi = matches!(w.step(), Step::Agents | Step::Frontend);
             for (i, (id, desc, on)) in w.options().iter().enumerate() {
                 let mark = match (multi, on) {
                     (true, true) => "[x]",
@@ -436,11 +482,13 @@ mod tests {
             agents,
         };
         let mut t = Terminal::new(TestBackend::new(100, 30)).unwrap();
-        // Choose Vue: the UI-kit step is skipped and ui_kit resets.
+        // Swap React for Vue and add a Ratatui TUI: no React left, so the UI-kit step is skipped.
         while w.step() != Step::Review {
             if w.step() == Step::Frontend {
-                w.cursor = 2;
-                w.choose();
+                for pick in ["web:react-vite", "web:vue", "tui:ratatui"] {
+                    w.cursor = w.options().iter().position(|o| o.0 == pick).unwrap();
+                    w.choose();
+                }
             }
             t.draw(|f| draw(f, &w)).unwrap();
             w.advance(1);
@@ -454,7 +502,8 @@ mod tests {
             .iter()
             .map(|c| c.symbol())
             .collect();
-        assert!(text.contains("vue · none"));
-        assert_eq!(w.cfg.frontend.ui_kit, "none");
+        assert!(text.contains("web (web · vue) → apps/web/"));
+        assert!(text.contains("tui (tui · ratatui) → apps/tui/"));
+        assert_eq!(w.cfg.interfaces.len(), 2);
     }
 }

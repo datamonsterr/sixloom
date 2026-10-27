@@ -77,8 +77,11 @@ impl Default for When {
 
 /// The project choices a `when` condition is matched against.
 pub struct Choices<'a> {
-    pub frontend: &'a str,
-    pub ui_kit: &'a str,
+    /// Frameworks of every interface (`frontend:<framework>` conditions).
+    pub frameworks: Vec<&'a str>,
+    /// Kinds of every interface (`kind:<web|tui|cli|mobile|desktop>` conditions).
+    pub kinds: Vec<&'a str>,
+    pub ui_kits: Vec<&'a str>,
     pub docs: &'a str,
     pub design: &'a str,
 }
@@ -91,8 +94,9 @@ impl Skill {
         };
         conds.iter().any(|cond| match cond.split_once(':') {
             None => *cond == "always",
-            Some(("frontend", v)) => v == c.frontend,
-            Some(("ui", v)) => v == c.ui_kit,
+            Some(("frontend", v)) => c.frameworks.contains(&v),
+            Some(("kind", v)) => c.kinds.contains(&v),
+            Some(("ui", v)) => c.ui_kits.contains(&v),
             Some(("docs", v)) => v == c.docs,
             Some(("design", v)) => v == c.design,
             _ => false,
@@ -216,8 +220,9 @@ mod tests {
     fn when_matching() {
         let cat = load().unwrap();
         let c = Choices {
-            frontend: "vue",
-            ui_kit: "none",
+            frameworks: vec!["vue", "ratatui"],
+            kinds: vec!["web", "tui"],
+            ui_kits: vec!["none"],
             docs: "starlight",
             design: "stitch",
         };

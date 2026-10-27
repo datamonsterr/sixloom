@@ -6,8 +6,9 @@
 #
 # `when` decides native installation at `sixloom init`:
 #   "always"                 core of the framework
-#   "frontend:<id>"          sixloom.toml frontend.framework
-#   "ui:<id>"                sixloom.toml frontend.ui_kit
+#   "frontend:<framework>"   any [[interfaces]] framework in sixloom.toml
+#   "kind:<kind>"            any [[interfaces]] kind (web | tui | cli | mobile | desktop)
+#   "ui:<id>"                any [[interfaces]] ui_kit
 #   "docs:<id>"              sixloom.toml docs.engine
 #   "design:<id>"            sixloom.toml design.tool
 #   a list means any-of. Skills whose `when` does not match go to the bank
@@ -37,7 +38,7 @@ description = "Visual direction, design systems and screen generation with Claud
 [[pack]]
 id = "frontend"
 title = "Front-end frameworks"
-description = "Framework-specific guidance for React, Next.js, Vue, Nuxt, Vite, Svelte and shadcn/ui"
+description = "Framework-specific guidance for web (React, Next.js, Vue, Nuxt, Vite, Svelte, shadcn/ui) and mobile (React Native) interfaces"
 
 [[pack]]
 id = "docs"
@@ -122,13 +123,13 @@ upstream = { repo = "mattpocock/skills", rev = "59db609eb1e18aaf59b63284d0e52255
 [[skill]]
 name = "frontend-design"
 pack = "design"
-when = "always"
+when = ["kind:web", "kind:mobile", "kind:desktop"]
 upstream = { repo = "anthropics/skills", rev = "dbd4588f9e1033efb41dad4bef2f7947c8993d44", path = "skills/frontend-design", license = "Apache-2.0" }
 
 [[skill]]
 name = "web-design-guidelines"
 pack = "design"
-when = "always"
+when = ["kind:web", "kind:desktop"]
 upstream = { repo = "vercel-labs/agent-skills", rev = "6ec269328bc400712ee225a173a14b6b29128df7", path = "skills/web-design-guidelines", license = "MIT" }
 
 [[skill]]
@@ -155,6 +156,12 @@ name = "vercel-composition-patterns"
 pack = "frontend"
 when = ["frontend:react-vite", "frontend:nextjs"]
 upstream = { repo = "vercel-labs/agent-skills", rev = "6ec269328bc400712ee225a173a14b6b29128df7", path = "skills/composition-patterns", license = "MIT" }
+
+[[skill]]
+name = "vercel-react-native-skills"
+pack = "frontend"
+when = "frontend:expo"
+upstream = { repo = "vercel-labs/agent-skills", rev = "6ec269328bc400712ee225a173a14b6b29128df7", path = "skills/react-native-skills", license = "MIT" }
 
 [[skill]]
 name = "shadcn-ui"
@@ -212,7 +219,7 @@ when = "docs:starlight"
 [[skill]]
 name = "playwright-cli"
 pack = "testing"
-when = "always"
+when = ["kind:web", "kind:desktop"]
 upstream = { repo = "microsoft/playwright-cli", rev = "b1a5903c5b633b8c9f843ad7b629c2a78437040c", path = "skills/playwright-cli", license = "Apache-2.0" }
 
 [[skill]]
@@ -224,5 +231,5 @@ upstream = { repo = "anthropics/skills", rev = "dbd4588f9e1033efb41dad4bef2f7947
 [[skill]]
 name = "vitest"
 pack = "testing"
-when = ["frontend:react-vite", "frontend:vue", "frontend:nuxt", "frontend:sveltekit"]
+when = ["frontend:react-vite", "frontend:vue", "frontend:nuxt", "frontend:sveltekit", "frontend:ink"]
 upstream = { repo = "antfu/skills", rev = "8886fe2d385d3644cbb47e46ae9cb1cf09307d3b", path = "skills/vitest", license = "MIT" }

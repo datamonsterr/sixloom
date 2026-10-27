@@ -18,13 +18,19 @@ Copy [SCREENS.template.md](SCREENS.template.md). This file matters most,
 because the preview, the e2e tests and the final visual check all come from
 it.
 
-- **Every screen** the spec needs: routes, modals, drawers, empty
-  first-run views, auth screens, settings, 404, and the global error page.
-- **Every functional control** on each screen: buttons, links, inputs, menu
-  items. Note the AC each one serves (`F-002.AC1`). A control with no AC is a
-  question for the human, not an invention.
+- **Every screen** the spec needs, for every interface in `sixloom layout`
+  (one section per interface when there are several): routes, modals,
+  drawers, empty first-run views, auth screens, settings, 404, and the global
+  error page on the web; views, panes, popups and the help overlay in a TUI;
+  commands and their outputs in a CLI.
+- **Every functional control** on each screen: buttons, links, inputs and
+  menu items on the web; key bindings, focusable widgets and input fields in a
+  TUI; subcommands, flags and prompts in a CLI. Note the AC each one serves
+  (`F-002.AC1`). A control with no AC is a question for the human, not an
+  invention.
 - **Every state** of each screen. These are mandatory where they apply:
-  `loading` (skeleton, not a spinner, for content areas), `empty`, `ready`,
+  `loading` (skeleton rows, not a spinner, for content areas; a TUI shows
+  placeholder rows or a status-line spinner), `empty`, `ready`,
   `error` (with retry), `partial` (some data failed), `submitting`,
   `validation-error`, `no-permission`, `offline`. Say what triggers each one
   and what the user can do from it.

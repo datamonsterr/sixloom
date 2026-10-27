@@ -77,6 +77,16 @@ enum Cmd {
     Skills(SkillsCmd),
     /// Re-install skills and instruction blocks after editing sixloom.toml or upgrading sixloom
     Update,
+    /// Show or change where code lives: interfaces, services and the architecture pattern
+    Layout {
+        #[command(subcommand)]
+        cmd: Option<LayoutCmd>,
+        #[arg(long)]
+        json: bool,
+        /// List the known interface kinds and frameworks
+        #[arg(long)]
+        frameworks: bool,
+    },
     /// Supported coding agents and whether they are installed
     Agents,
     /// Check tools, skills and project state
@@ -102,10 +112,14 @@ struct InitArgs {
     /// Comma-separated: claude,codex,opencode,gemini,kimi,antigravity,cursor,copilot,amp
     #[arg(long, value_delimiter = ',')]
     agents: Vec<String>,
-    /// react-vite | nextjs | vue | nuxt | sveltekit
+    /// An interface as kind:framework[:path], repeatable, e.g. web:react-vite, tui:ratatui:crates/tui
+    /// (kinds: web, tui, cli, mobile, desktop; see `sixloom layout --frameworks`)
+    #[arg(long = "interface", value_name = "KIND:FRAMEWORK[:PATH]")]
+    interfaces: Vec<String>,
+    /// Shorthand for one interface by framework name, e.g. --frontend vue
     #[arg(long)]
     frontend: Option<String>,
-    /// shadcn | none
+    /// UI kit for React web interfaces: shadcn | none
     #[arg(long)]
     ui_kit: Option<String>,
     /// fumadocs | docusaurus | starlight
@@ -125,6 +139,68 @@ struct InitArgs {
     yes: bool,
     #[arg(long)]
     force: bool,
+}
+
+#[derive(Subcommand)]
+enum LayoutCmd {
+    /// Add or remove a front end (web, TUI, CLI, mobile, desktop)
+    #[command(subcommand)]
+    Interface(InterfaceCmd),
+    /// Add or remove a backend service (the system-design loom records these)
+    #[command(subcommand)]
+    Service(ServiceCmd),
+    /// Record the architecture pattern: monolith, modular-monolith, microservices, serverless, local-only
+    Pattern { pattern: String },
+    /// Folders whose tests are locked acceptance tests (e.g. a Rust crate's tests/)
+    #[command(subcommand)]
+    Locked(LockedCmd),
+}
+
+#[derive(Subcommand)]
+enum LockedCmd {
+    Add { folder: String },
+    Remove { folder: String },
+}
+
+#[derive(Subcommand)]
+enum InterfaceCmd {
+    /// kind:framework[:path], e.g. `tui:ratatui:crates/tui`
+    Add {
+        spec: String,
+        /// Name used in commands and docs (default: the kind)
+        #[arg(long)]
+        id: Option<String>,
+        /// The module that talks to the backend, relative to the interface folder
+        #[arg(long)]
+        api_client: Option<String>,
+        /// Mock data and scenarios, relative to the interface folder
+        #[arg(long)]
+        mocks: Option<String>,
+        #[arg(long)]
+        ui_kit: Option<String>,
+    },
+    Remove {
+        id: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum ServiceCmd {
+    Add {
+        id: String,
+        /// http-api | worker | gateway | library | database | other
+        #[arg(long, default_value = "http-api")]
+        kind: String,
+        /// Language/framework chosen in the ADRs, e.g. hono-node, axum, fastapi, go-chi
+        #[arg(long)]
+        stack: String,
+        /// Folder, relative to the project root (default: services/<id>)
+        #[arg(long)]
+        path: Option<String>,
+    },
+    Remove {
+        id: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -268,17 +344,17 @@ fn run() -> Result<()> {
         Cmd::Change(c) => cmd_change(&cli.dir, c),
         Cmd::Trace { id, json, strict } => cmd_trace(&cli.dir, id, json, strict),
         Cmd::Tests(t) => {
-            let root = root_of(&cli.dir)?;
+            let (root, cfg) = project(&cli.dir)?;
             match t {
                 TestsCmd::Lock => {
-                    let (n, warnings) = lock::lock(&root)?;
+                    let (n, warnings) = lock::lock(&root, &cfg.tests.locked)?;
                     for w in warnings {
                         println!("{} {w}", yellow("!"));
                     }
                     println!("{} locked {n} tests into {}", green("✓"), lock::LOCK);
                 }
                 TestsCmd::Verify => {
-                    let problems = lock::verify(&root)?;
+                    let problems = lock::verify(&root, &cfg.tests.locked)?;
                     if problems.is_empty() {
                         println!("{} locked tests intact", green("✓"));
                     } else {
@@ -303,6 +379,11 @@ fn run() -> Result<()> {
             println!("{} refreshed {}", green("✓"), files.join(", "));
             Ok(())
         }
+        Cmd::Layout {
+            cmd,
+            json,
+            frameworks,
+        } => cmd_layout(&cli.dir, cmd, json, frameworks),
         Cmd::Agents => {
             println!("{}", bold("Supported coding agents"));
             for h in harness::ALL {
@@ -412,6 +493,9 @@ fn cmd_init(a: InitArgs, dir: Option<PathBuf>, tty: bool) -> Result<()> {
     println!("{} sixloom initialised in {}", green("✓"), path.display());
     println!("  {}", dim(&format!("created {}", out.created.join(", "))));
     print_skill_report(&out.skills);
+    if let Some(why) = &out.not_committed {
+        println!("{} not committed: {why}", yellow("!"));
+    }
     println!();
     print_next(&path, &cfg)?;
     Ok(())
@@ -424,14 +508,18 @@ fn apply_flags(cfg: &mut Config, a: &InitArgs) -> Result<()> {
         }
         cfg.agents.harnesses = a.agents.clone();
     }
-    if let Some(v) = &a.frontend {
-        cfg.frontend.framework = v.clone();
-        if !matches!(v.as_str(), "react-vite" | "nextjs") && a.ui_kit.is_none() {
-            cfg.frontend.ui_kit = "none".into();
+    let specs: Vec<&String> = a.frontend.iter().chain(a.interfaces.iter()).collect();
+    if !specs.is_empty() {
+        cfg.interfaces.clear();
+        for spec in specs {
+            let i = config::parse_interface(spec, &cfg.interfaces)?;
+            cfg.interfaces.push(i);
         }
     }
     if let Some(v) = &a.ui_kit {
-        cfg.frontend.ui_kit = v.clone();
+        for i in cfg.interfaces.iter_mut().filter(|i| i.kind == "web") {
+            i.ui_kit = v.clone();
+        }
     }
     if let Some(v) = &a.docs {
         cfg.docs.engine = v.clone();
@@ -525,8 +613,15 @@ fn cmd_status(dir: &Option<PathBuf>, json: bool) -> Result<()> {
         "{}  {}",
         bold(&cfg.project.name),
         dim(&format!(
-            "{} · {} · {} · design: {}",
-            cfg.frontend.framework, cfg.frontend.ui_kit, cfg.docs.engine, cfg.design.tool
+            "{} · pattern: {} · docs: {} · design: {}",
+            cfg.interfaces
+                .iter()
+                .map(|i| i.label())
+                .collect::<Vec<_>>()
+                .join(", "),
+            cfg.system.pattern,
+            cfg.docs.engine,
+            cfg.design.tool
         ))
     );
     let track = |ids: &[&str]| -> String {
@@ -725,7 +820,7 @@ fn cmd_change(dir: &Option<PathBuf>, c: ChangeCmd) -> Result<()> {
 
 fn cmd_trace(dir: &Option<PathBuf>, id: Option<String>, json: bool, strict: bool) -> Result<()> {
     let (root, cfg) = project(dir)?;
-    let t = trace::build(&root, &cfg.docs.content_dir, id.as_deref())?;
+    let t = trace::build(&root, &cfg, id.as_deref())?;
     if json {
         println!("{}", serde_json::to_string_pretty(&t)?);
     } else {
@@ -829,6 +924,163 @@ fn cmd_skills(dir: &Option<PathBuf>, s: SkillsCmd) -> Result<()> {
     Ok(())
 }
 
+fn cmd_layout(
+    dir: &Option<PathBuf>,
+    cmd: Option<LayoutCmd>,
+    json: bool,
+    frameworks: bool,
+) -> Result<()> {
+    if frameworks {
+        for kind in config::KINDS {
+            let list: Vec<_> = config::INTERFACES
+                .iter()
+                .filter(|(k, _, _)| k == kind)
+                .map(|(_, f, l)| format!("{f} ({l})"))
+                .collect();
+            println!("{} {}", bold(&format!("{kind:<8}")), list.join(", "));
+        }
+        println!(
+            "{}",
+            dim("Any other framework name works too; the known ones get matching skills.")
+        );
+        return Ok(());
+    }
+    let (root, mut cfg) = project(dir)?;
+    if let Some(cmd) = cmd {
+        let what = match cmd {
+            LayoutCmd::Locked(LockedCmd::Add { folder }) => {
+                let dir = folder.trim_end_matches('/').to_string();
+                if cfg.tests.locked.contains(&dir) {
+                    bail!("{dir} is already locked");
+                }
+                cfg.tests.locked.push(dir.clone());
+                format!(
+                    "tests under {dir}/ are now locked acceptance tests (run `sixloom tests lock`)"
+                )
+            }
+            LayoutCmd::Locked(LockedCmd::Remove { folder }) => {
+                let dir = folder.trim_end_matches('/').to_string();
+                let n = cfg.tests.locked.len();
+                cfg.tests.locked.retain(|d| d != &dir);
+                if n == cfg.tests.locked.len() {
+                    bail!("{dir} is not a locked folder");
+                }
+                format!("{dir}/ is no longer locked")
+            }
+            LayoutCmd::Pattern { pattern } => {
+                cfg.system.pattern = pattern.clone();
+                format!("pattern set to {pattern}")
+            }
+            LayoutCmd::Interface(InterfaceCmd::Add {
+                spec,
+                id,
+                api_client,
+                mocks,
+                ui_kit,
+            }) => {
+                let mut i = config::parse_interface(&spec, &cfg.interfaces)?;
+                if let Some(id) = id {
+                    // No explicit path in the spec: the folder follows the id.
+                    if spec.splitn(3, ':').nth(2).is_none() {
+                        i.path = format!("apps/{id}");
+                    }
+                    i.id = id;
+                }
+                if let Some(v) = api_client {
+                    i.api_client = v;
+                }
+                if let Some(v) = mocks {
+                    i.mocks = v;
+                }
+                if let Some(v) = ui_kit {
+                    i.ui_kit = v;
+                }
+                let msg = format!("added interface {} at {}/", i.label(), i.path);
+                cfg.interfaces.push(i);
+                msg
+            }
+            LayoutCmd::Interface(InterfaceCmd::Remove { id }) => {
+                let n = cfg.interfaces.len();
+                cfg.interfaces.retain(|i| i.id != id);
+                if n == cfg.interfaces.len() {
+                    bail!("no interface '{id}'");
+                }
+                format!("removed interface {id} (its folder is untouched)")
+            }
+            LayoutCmd::Service(ServiceCmd::Add {
+                id,
+                kind,
+                stack,
+                path,
+            }) => {
+                let path = path.unwrap_or_else(|| format!("services/{id}"));
+                let msg = format!("added service {id} ({kind} · {stack}) at {path}/");
+                cfg.services.push(config::Service {
+                    id,
+                    kind,
+                    stack,
+                    path,
+                });
+                msg
+            }
+            LayoutCmd::Service(ServiceCmd::Remove { id }) => {
+                let n = cfg.services.len();
+                cfg.services.retain(|s| s.id != id);
+                if n == cfg.services.len() {
+                    bail!("no service '{id}'");
+                }
+                format!("removed service {id} (its folder is untouched)")
+            }
+        };
+        cfg.validate()?;
+        cfg.save(&root)?;
+        let rep = skills::sync(&root, &cfg)?;
+        let files = init::write_instructions(&root, &cfg)?;
+        println!("{} {what}", green("✓"));
+        println!(
+            "  {}",
+            dim(&format!(
+                "updated sixloom.toml, {}; {} skills installed",
+                files.join(", "),
+                rep.native.len()
+            ))
+        );
+    }
+    if json {
+        let v = serde_json::json!({
+            "pattern": cfg.system.pattern,
+            "interfaces": cfg.interfaces.iter().map(|i| serde_json::json!({
+                "id": i.id, "kind": i.kind, "framework": i.framework, "ui_kit": i.ui_kit,
+                "path": i.path, "api_client": i.api_client_path(), "mocks": i.mocks_path(),
+                "preview_doc": i.preview_doc(),
+            })).collect::<Vec<_>>(),
+            "services": cfg.services,
+            "locked_tests": cfg.tests.locked,
+            "docs": { "engine": cfg.docs.engine, "content_dir": cfg.docs.content_dir },
+            "contract": "contracts/openapi.yaml",
+            "spec": "spec/SPEC.md",
+        });
+        println!("{}", serde_json::to_string_pretty(&v)?);
+        return Ok(());
+    }
+    println!(
+        "{} {}",
+        bold("Layout"),
+        dim(&format!("(pattern: {})", cfg.system.pattern))
+    );
+    for l in cfg.layout_lines() {
+        println!("  {}", l.replace('`', "").replace("**", ""));
+    }
+    println!(
+        "  {}",
+        dim(&format!(
+            "docs pages: {} · contract: contracts/openapi.yaml · spec: spec/SPEC.md",
+            cfg.docs.content_dir
+        ))
+    );
+    Ok(())
+}
+
 fn cmd_doctor(dir: &Option<PathBuf>) -> Result<()> {
     let ok = |b: bool| if b { green("✓") } else { yellow("!") };
     println!("{}", bold("Tools"));
@@ -887,7 +1139,7 @@ fn cmd_doctor(dir: &Option<PathBuf>) -> Result<()> {
         Err(_) => println!("  {} spec: not written yet (sxl-specify)", dim("○")),
     }
     if root.join(lock::LOCK).exists() {
-        let v = lock::verify(&root)?;
+        let v = lock::verify(&root, &cfg.tests.locked)?;
         println!(
             "  {} locked tests {}",
             ok(v.is_empty()),
@@ -899,4 +1151,16 @@ fn cmd_doctor(dir: &Option<PathBuf>) -> Result<()> {
         );
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod cli_tests {
+    use super::Cli;
+    use clap::CommandFactory;
+
+    /// Catches clashing argument names and other definition errors clap reports only at runtime.
+    #[test]
+    fn cli_definition_is_valid() {
+        Cli::command().debug_assert();
+    }
 }

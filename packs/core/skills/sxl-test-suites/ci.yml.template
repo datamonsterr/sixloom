@@ -1,4 +1,6 @@
 # sixloom CI: every step calls a `just` target, so a red job reproduces locally.
+# Path filters list one entry per interface and service folder from `sixloom layout`;
+# `web` (apps/web) and `api` (services/api) below are examples.
 name: ci
 
 on:
@@ -23,8 +25,8 @@ jobs:
         uses: dorny/paths-filter@v3
         with:
           filters: |
-            web: ['apps/web/**', 'contracts/**']
-            api: ['apps/api/**', 'contracts/**']
+            web: ['apps/web/**', 'contracts/**']        # every interface folder
+            api: ['services/api/**', 'contracts/**']    # every service folder
             tests: ['tests/**', '.sixloom/tests.lock', 'spec/**']
 
   locks:

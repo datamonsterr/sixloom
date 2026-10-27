@@ -16,10 +16,13 @@ Follow the **sxl-loom** protocol. Loom ID: `validate`. Write the report to
 2. **Trace.** `sixloom trace` must show zero `must` ACs without a passing
    test, and zero operations in the contract without an implementation (no
    remaining 501).
-3. **Preview versus real (visual).** For each screen × state in
-   `apps/web/PREVIEW.md` that is reachable in real mode (ready, empty,
-   validation-error, and the others you can seed), take the screenshot in
-   real mode and compare it with the preview. Copy
+3. **Preview versus real.** For each interface (paths from `sixloom layout`)
+   and each screen × state in its `PREVIEW.md` that is reachable in real mode
+   (ready, empty, validation-error, and the others you can seed), capture the
+   real app and compare it with the preview:
+   - **TUI and CLI**: compare the text screen, or stdout and the exit code,
+     with the captures in `<path>/.preview-shots/`. Only data may differ.
+   - **web and desktop**: screenshots. Copy
    [visual.spec.template.ts](visual.spec.template.ts) to
    `tests/visual/visual.spec.ts` and add a `visual` project to the
    Playwright config. Record the baseline from the preview

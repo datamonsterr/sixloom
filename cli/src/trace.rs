@@ -13,6 +13,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::Path;
 
+use crate::config::Config;
 use crate::state::files_under;
 
 #[derive(Debug, Clone, Serialize)]
@@ -147,21 +148,32 @@ pub struct Trace {
     pub gaps: Vec<String>,
 }
 
-pub fn build(root: &Path, content_dir: &str, filter: Option<&str>) -> Result<Trace> {
+/// Source files an interface may carry trace markers in.
+const UI_EXTS: &[&str] = &[
+    ".ts", ".tsx", ".js", ".jsx", ".mjs", ".vue", ".svelte", ".astro", ".html", ".rs", ".go",
+    ".py", ".dart", ".kt", ".swift",
+];
+
+pub fn build(root: &Path, cfg: &Config, filter: Option<&str>) -> Result<Trace> {
+    let content_dir = cfg.docs.content_dir.as_str();
     let spec = load_spec(root)?;
     let ac_re = Regex::new(r"F-\d{3,}\.AC\d+").unwrap();
     let screens = screen_refs(root, &ac_re);
     let (ops, untraced) = operation_refs(root);
-    let tests = test_refs(root, &ac_re);
+    let tests = test_refs(root, &cfg.tests.locked);
     let docs = marker_refs(root, content_dir, &[".md", ".mdx"], &marker_re());
-    let ui = marker_refs(
-        root,
-        "apps/web/src",
-        &[
-            ".ts", ".tsx", ".js", ".jsx", ".vue", ".svelte", ".astro", ".html",
-        ],
-        &attr_re(),
-    );
+    // Web interfaces mark elements with data-sxl; TUI, CLI and native code use an `sxl:` comment.
+    let mut ui: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    for i in &cfg.interfaces {
+        for re in [attr_re(), marker_re()] {
+            for (id, files) in marker_refs(root, &i.path, UI_EXTS, &re) {
+                let v = ui.entry(id).or_default();
+                v.extend(files);
+                v.sort();
+                v.dedup();
+            }
+        }
+    }
 
     let known: BTreeSet<String> = spec
         .features
@@ -295,19 +307,27 @@ fn operation_refs(root: &Path) -> (BTreeMap<String, Vec<String>>, Vec<String>) {
 }
 
 /// AC → test files, from AC IDs in test titles under tests/.
-fn test_refs(root: &Path, ac_re: &Regex) -> BTreeMap<String, Vec<String>> {
-    let title = Regex::new(r#"\b(?:test|it|scenario)(?:\.\w+)*\s*\(\s*['"`]([^'"`]*)"#).unwrap();
+/// AC → test files, from AC IDs in test titles: `test('F-001.AC1 …')` in JS/TS, or
+/// `f001_ac1_…` / `TestF001AC1…` names in Rust, Python and Go.
+fn test_refs(root: &Path, dirs: &[String]) -> BTreeMap<String, Vec<String>> {
+    let id = Regex::new(r"(?i)F[-_]?(\d{3,})[._-]?AC[-_]?(\d+)").unwrap();
     let mut out: BTreeMap<String, Vec<String>> = BTreeMap::new();
-    for f in files_under(root, "tests") {
+    let mut scan: Vec<&str> = vec!["tests"];
+    scan.extend(dirs.iter().map(String::as_str));
+    let mut files: Vec<String> = scan.iter().flat_map(|d| files_under(root, d)).collect();
+    files.sort();
+    files.dedup();
+    for f in files {
         if !is_test_source(&f) {
             continue;
         }
         let Ok(text) = fs::read_to_string(root.join(&f)) else {
             continue;
         };
-        for c in title.captures_iter(&text) {
-            for m in ac_re.find_iter(&c[1]) {
-                let v = out.entry(m.as_str().to_string()).or_default();
+        for t in crate::lock::parse_file(&f, &text) {
+            for c in id.captures_iter(&t.title) {
+                let ac = format!("F-{}.AC{}", &c[1], &c[2]);
+                let v = out.entry(ac).or_default();
                 if !v.contains(&f) {
                     v.push(f.clone());
                 }
@@ -349,11 +369,23 @@ fn marker_refs(root: &Path, dir: &str, exts: &[&str], re: &Regex) -> BTreeMap<St
         let Ok(text) = fs::read_to_string(root.join(&f)) else {
             continue;
         };
+        if is_generated(&f, &text) {
+            continue;
+        }
         for id in ids_in_markers(&text, re) {
             out.entry(id).or_default().push(f.clone());
         }
     }
     out
+}
+
+/// Generated code (API types, clients) copies the contract's `sxl:` lines; it is not evidence.
+fn is_generated(path: &str, text: &str) -> bool {
+    path.ends_with(".d.ts")
+        || text.lines().take(8).any(|l| {
+            let l = l.to_ascii_lowercase();
+            l.contains("auto-generated") || l.contains("@generated") || l.contains("code generated")
+        })
 }
 
 /// Files citing the AC itself or its whole feature.
@@ -371,7 +403,7 @@ fn with_feature(map: &BTreeMap<String, Vec<String>>, ac: &str, feature: &str) ->
 }
 
 pub fn is_test_source(f: &str) -> bool {
-    [".ts", ".tsx", ".js", ".mjs", ".cjs", ".py"]
+    [".ts", ".tsx", ".js", ".mjs", ".cjs", ".py", ".rs", ".go"]
         .iter()
         .any(|e| f.ends_with(e))
 }
@@ -453,7 +485,27 @@ mod tests {
             "<form data-sxl=\"F-001.AC1\">",
         )
         .unwrap();
-        let t = build(r, "docs/content/docs", None).unwrap();
+        let mut cfg = crate::init::default_config("t");
+        cfg.interfaces.push(crate::config::Interface::new(
+            "tui",
+            "tui",
+            "ratatui",
+            Some("crates/tui"),
+        ));
+        fs::create_dir_all(r.join("crates/tui/src")).unwrap();
+        fs::write(
+            r.join("crates/tui/src/list.rs"),
+            "// sxl: F-001.AC1\nfn draw() {}\n",
+        )
+        .unwrap();
+        // A Rust acceptance test names its AC in the function name.
+        fs::create_dir_all(r.join("tests/e2e/tui")).unwrap();
+        fs::write(
+            r.join("tests/e2e/tui/list.rs"),
+            "#[test]\nfn f001_ac1_lists() {\n    assert!(true);\n}\n",
+        )
+        .unwrap();
+        let t = build(r, &cfg, None).unwrap();
         assert_eq!(t.rows.len(), 1);
         assert_eq!(t.rows[0].screens, vec!["S-01"]);
         assert_eq!(t.rows[0].operations, vec!["signIn"]);
@@ -461,8 +513,14 @@ mod tests {
             t.rows[0].docs,
             vec!["docs/content/docs/architecture/data-model.mdx"]
         );
-        assert_eq!(t.rows[0].ui, vec!["apps/web/src/SignIn.tsx"]);
-        assert_eq!(t.rows[0].tests, vec!["tests/e2e/a.spec.ts"]);
+        assert_eq!(
+            t.rows[0].ui,
+            vec!["apps/web/src/SignIn.tsx", "crates/tui/src/list.rs"]
+        );
+        assert_eq!(
+            t.rows[0].tests,
+            vec!["tests/e2e/a.spec.ts", "tests/e2e/tui/list.rs"]
+        );
         assert_eq!(t.orphans, vec!["F-009.AC1"]);
         assert_eq!(t.untraced_operations, vec!["orphanOp"]);
     }

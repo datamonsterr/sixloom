@@ -1,7 +1,7 @@
 {
   "name": "sixloom-frontend",
   "version": "0.1.0",
-  "description": "Framework-specific guidance for React, Next.js, Vue, Nuxt, Vite, Svelte and shadcn/ui",
+  "description": "Framework-specific guidance for web (React, Next.js, Vue, Nuxt, Vite, Svelte, shadcn/ui) and mobile (React Native) interfaces",
   "author": {
     "name": "datamonsterr",
     "url": "https://github.com/datamonsterr"
@@ -16,7 +16,7 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Front-end frameworks",
-    "shortDescription": "Framework-specific guidance for React, Next.js, Vue, Nuxt, Vite, Svelte and shad",
+    "shortDescription": "Framework-specific guidance for web (React, Next.js, Vue, Nuxt, Vite, Svelte, sh",
     "developerName": "datamonsterr",
     "category": "Coding",
     "capabilities": [

@@ -25,6 +25,8 @@ REPO = "https://github.com/datamonsterr/sixloom"
 BUNDLES = {
     "sixloom": ("The sixloom loom workflow: spec, UI design, preview, data model, system design, API docs, locked test suites, autonomous TDD build, patch and validate.",
                 ["always"]),
+    "sixloom-web": ("sixloom skills for any web or desktop interface: visual design direction, web interface guidelines, Playwright browser testing.", ["kind:web"]),
+    "sixloom-expo": ("sixloom front-end skills for Expo / React Native mobile interfaces (Vercel React Native guide).", ["frontend:expo"]),
     "sixloom-react": ("sixloom front-end skills for React + Vite (Vercel React guides, Vite, Vitest).", ["frontend:react-vite"]),
     "sixloom-nextjs": ("sixloom front-end skills for Next.js (Vercel React and composition guides).", ["frontend:nextjs"]),
     "sixloom-vue": ("sixloom front-end skills for Vue 3 + Vite (antfu's Vue, Vite and Vitest skills).", ["frontend:vue"]),

@@ -240,39 +240,68 @@ It then lists what only you can confirm. It is done when you say so.
 
 ## Project layout
 
+A sixloom project has **fixed folders** for the things every product has, and
+**configured folders** for the code, because code depends on the stack. A
+React web app, a Ratatui TUI, a Go CLI and three microservices all fit, since
+each one is a folder recorded in `sixloom.toml`. Every command, check,
+test lock and skill reads the folders from there, and the rules block in
+`AGENTS.md`/`CLAUDE.md` is regenerated from it. Nothing is hard-coded.
+
 ```
-sixloom.toml            your choices: agents, front end, docs engine, design tool, build limits
-AGENTS.md / CLAUDE.md   managed sixloom block + your own rules
-spec/
-  SPEC.md               the truth for behavior (features, ACs, IDs)
-  changes/CH-*.md       change records (the changelog stack)
-  CHANGELOG.md          generated from the records
-design/
-  DESIGN.md             design system tokens and rules
-  SCREENS.md            every screen × state × control, plus flows
-  exports/              comps: *.dc.html (Claude Design) or Stitch HTML
-apps/
-  web/                  the preview, which becomes the real front end (src/api, src/mocks)
-  api/                  the backend (scaffolded by the tests loom)
+sixloom.toml            choices + layout: [[interfaces]], [system] pattern, [[services]], [tests] locked
+AGENTS.md / CLAUDE.md   managed sixloom block (rules + the current layout) + your own rules
+spec/                   SPEC.md (features, ACs, IDs) · changes/CH-*.md · CHANGELOG.md
+design/                 DESIGN.md (tokens) · SCREENS.md (screens × states × controls) · exports/ (.dc.html or Stitch HTML)
 contracts/openapi.yaml  the truth for data shape
-docs/                   docs site (Fumadocs | Docusaurus | Starlight), MDX pages
-  diagrams/system.drawio
-tests/
-  e2e/                  one test per AC (locked)
-  contract/ integration/  per operation and flow (locked)
-.sixloom/
-  state.json            loom status, approvals, input hashes (stale detection)
-  context/<loom>.xml    context packs
-  tests.lock            locked-test fingerprints
-  runs/                 build plan and log, validate reports
+docs/                   docs site (Fumadocs | Docusaurus | Starlight): MDX pages, data model, system design, API reference
+tests/                  e2e/<interface>/ · contract/ · integration/: locked acceptance tests
+.sixloom/               state.json · tests.lock · context/<loom>.xml · runs/
 justfile                the one command surface for humans, agents and CI
+
+<interface folders>     one per front end, chosen at init: apps/web, crates/tui, cmd/cli, apps/mobile …
+<service folders>       one per backend service, decided by the system-design loom: services/api, crates/core …
 ```
+
+**Interfaces** (what users touch) are chosen at `init`. Each has a `kind`, a
+`framework`, a folder, its API client module and its mocks:
+
+| Kind | Frameworks sixloom knows | Preview runs on | E2E tests with |
+|---|---|---|---|
+| `web` | react-vite, nextjs, vue, nuxt, sveltekit | MSW mocks, `?sxl=<scenario>` | Playwright |
+| `tui` | ratatui, bubbletea, textual, ink | mock client, `SXL_SCENARIO` | framework harness (TestBackend, Pilot, teatest, ink-testing-library) |
+| `cli` | clap, cobra, typer, commander | mock client, `--sxl-scenario` | run the binary, assert stdout and exit code |
+| `mobile` | expo, flutter | mock client + dev menu | Maestro or Detox |
+| `desktop` | tauri, electron | mock client | Playwright (Electron) or tauri-driver |
+
+Other frameworks work too; the known ones also get matching skills.
+
+**Services** and the **architecture pattern** (`monolith`,
+`modular-monolith`, `microservices`, `serverless`, `local-only`) are
+decided by the system-design loom and recorded with `sixloom layout`. They
+are not asked at `init`, because they depend on the data model.
+
+```sh
+sixloom init --interface web:react-vite --interface tui:ratatui:crates/tui
+sixloom layout                                    # show every folder
+sixloom layout interface add cli:clap:crates/cli  # also: interface remove <id>
+sixloom layout pattern monolith
+sixloom layout service add api --kind http-api --stack axum --path crates/api
+sixloom layout locked add crates/tui/tests        # a language that keeps tests inside its package
+```
+
+Each change updates `sixloom.toml`, the rules block and the installed
+skills. Locked acceptance tests can be JS/TS, Rust, Python or Go; AC IDs
+go in the test name (`test('F-001.AC1 …')` or `fn f001_ac1_…`).
+
+[`examples/tasklet`](examples/tasklet) is the web layout (React + a Hono API);
+[`examples/jot-tui`](examples/jot-tui) is a local-only Ratatui TUI with Rust acceptance tests in `crates/tui/tests`.
 
 ## Choices and skill packs
 
 | Choice | Options | Default |
 |---|---|---|
-| Front end | `react-vite`, `nextjs`, `vue`, `nuxt`, `sveltekit` (UI kit: `shadcn` or `none`) | `react-vite` + `shadcn` |
+| Interfaces | one or more of web, TUI, CLI, mobile, desktop (see [Project layout](#project-layout)); React web also takes a UI kit (`shadcn` or `none`) | `web:react-vite` + `shadcn` |
+| Services, pattern | decided by the system-design loom, recorded with `sixloom layout` | none until then |
 | Docs engine | `fumadocs`, `docusaurus`, `starlight` | `fumadocs` |
 | Design tool | `claude` (Claude Design), `stitch` (Google Stitch CLI), `none` | `claude` |
 
@@ -306,8 +335,13 @@ in a real terminal.
 
 ```
 sixloom                         dashboard (TUI)
-sixloom init [DIR] [--adopt] [--agents a,b] [--frontend X] [--ui-kit X] [--docs X] [--design X] [--fidelity key|all|none] [--bank] [--yes]
+sixloom init [DIR] [--adopt] [--agents a,b] [--interface kind:framework[:path]]... [--ui-kit X] [--docs X] [--design X] [--fidelity key|all|none] [--bank] [--yes]
 sixloom status [--json]         every loom: approved / in review / in progress / ready / blocked / stale (+ changed inputs)
+sixloom layout [--json] [--frameworks]   where code lives: interfaces, services, pattern, locked test folders
+sixloom layout interface add <kind:framework[:path]> [--id] [--api-client] [--mocks] | interface remove <id>
+sixloom layout service add <id> --stack <s> [--kind] [--path] | service remove <id>
+sixloom layout pattern <monolith|modular-monolith|microservices|serverless|local-only>
+sixloom layout locked add|remove <folder>
 sixloom next                    next loom + the invocation for each of your agents
 sixloom loom start <loom>       check prerequisites, write .sixloom/context/<loom>.xml, mark in progress
 sixloom loom end <loom> [--approve] [--all] [-m msg] [--no-commit]   machine checks, then commit `sxl(<loom>): …`

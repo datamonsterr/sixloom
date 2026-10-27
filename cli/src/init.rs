@@ -20,6 +20,8 @@ pub enum Mode {
 pub struct Outcome {
     pub created: Vec<String>,
     pub skills: Report,
+    /// Why the scaffold was left staged instead of committed, if it was.
+    pub not_committed: Option<String>,
 }
 
 const BEGIN: &str = "<!-- sixloom:begin";
@@ -77,8 +79,12 @@ pub fn run(root: &Path, cfg: &Config, mode: Mode, force: bool) -> Result<Outcome
         created.push(f);
     }
     let skills = skills::sync(root, cfg)?;
-    commit_scaffold(root, cfg, &skills.native)?;
-    Ok(Outcome { created, skills })
+    let not_committed = commit_scaffold(root, cfg, &skills.native)?;
+    Ok(Outcome {
+        created,
+        skills,
+        not_committed,
+    })
 }
 
 fn git(root: &Path, args: &[&str]) -> bool {
@@ -95,9 +101,9 @@ fn inside_git(root: &Path) -> bool {
 }
 
 /// Commit only the files sixloom wrote, leaving anything else the user has staged alone.
-fn commit_scaffold(root: &Path, cfg: &Config, installed: &[String]) -> Result<()> {
+fn commit_scaffold(root: &Path, cfg: &Config, installed: &[String]) -> Result<Option<String>> {
     if !inside_git(root) {
-        return Ok(());
+        return Ok(Some("not a git repository".into()));
     }
     let (dirs, files) = harness::targets(&cfg.agents.harnesses)?;
     let mut paths: Vec<String> = [
@@ -127,13 +133,20 @@ fn commit_scaffold(root: &Path, cfg: &Config, installed: &[String]) -> Result<()
     let mut add = vec!["add", "--"];
     add.extend(paths.iter().map(String::as_str));
     if !git(root, &add) {
-        return Ok(());
+        return Ok(Some("git add failed".into()));
     }
     let mut commit = vec!["commit", "-q", "-m", "sxl(init): add sixloom", "--"];
     commit.extend(paths.iter().map(String::as_str));
-    // No identity configured or nothing to commit: leave the files staged.
-    git(root, &commit);
-    Ok(())
+    if git(root, &commit) {
+        return Ok(None);
+    }
+    // The usual cause: no git identity on this machine. The files stay staged.
+    let identity = git(root, &["config", "user.email"]);
+    Ok(Some(if identity {
+        "git commit failed; the files are staged".into()
+    } else {
+        "no git identity: run `git config user.name …` and `git config user.email …`, then commit; the files are staged".into()
+    }))
 }
 
 /// Write or refresh the managed block in every harness instruction file.
@@ -141,8 +154,15 @@ pub fn write_instructions(root: &Path, cfg: &Config) -> Result<Vec<String>> {
     let (dirs, files) = harness::targets(&cfg.agents.harnesses)?;
     let block = template("project/agents-block.md")?
         .replace("{{content_dir}}", &cfg.docs.content_dir)
-        .replace("{{frontend}}", &cfg.frontend.framework)
-        .replace("{{ui_kit}}", &cfg.frontend.ui_kit)
+        .replace("{{pattern}}", &format!("pattern: {}", cfg.system.pattern))
+        .replace(
+            "{{layout}}",
+            &cfg.layout_lines()
+                .iter()
+                .map(|l| format!("- {l}"))
+                .collect::<Vec<_>>()
+                .join("\n"),
+        )
         .replace("{{docs}}", &cfg.docs.engine)
         .replace("{{design}}", &cfg.design.tool)
         .replace(
@@ -194,10 +214,9 @@ pub fn default_config(name: &str) -> Config {
         agents: config::Agents {
             harnesses: vec!["claude".into(), "codex".into()],
         },
-        frontend: config::Frontend {
-            framework: "react-vite".into(),
-            ui_kit: "shadcn".into(),
-        },
+        interfaces: vec![config::Interface::new("web", "web", "react-vite", None)],
+        system: Default::default(),
+        services: vec![],
         docs: config::Docs {
             engine: "fumadocs".into(),
             content_dir: config::content_dir_for("fumadocs").into(),
@@ -209,6 +228,7 @@ pub fn default_config(name: &str) -> Config {
         build: Default::default(),
         validate: Default::default(),
         skills: Default::default(),
+        tests: Default::default(),
     }
 }
 
@@ -235,7 +255,8 @@ mod tests {
             assert!(!root.join(d).join("nuxt").exists());
         }
         let agents = fs::read_to_string(root.join("AGENTS.md")).unwrap();
-        assert!(agents.contains("front end **react-vite**"));
+        assert!(agents.contains("`apps/web/` interface **web** (web · react-vite)"));
+        assert!(agents.contains("services: not decided yet"));
         assert!(root.join("CLAUDE.md").is_file());
         // Unselected variants land in the other-skill bank.
         let bank = fs::read_dir(root.join(".otherskill/bank/frontend"))
@@ -266,8 +287,14 @@ mod tests {
         let mut cfg = default_config("x");
         cfg.agents.harnesses = vec!["codex".into()];
         run(root, &cfg, Mode::Adopt, false).unwrap();
-        cfg.frontend.framework = "vue".into();
-        cfg.frontend.ui_kit = "none".into();
+        cfg.interfaces = vec![config::Interface::new(
+            "tui",
+            "tui",
+            "ratatui",
+            Some("crates/tui"),
+        )];
+        cfg.interfaces
+            .push(config::Interface::new("web", "web", "vue", None));
         cfg.save(root).unwrap();
         let rep = skills::sync(root, &cfg).unwrap();
         assert!(rep
@@ -280,7 +307,7 @@ mod tests {
         let agents = fs::read_to_string(root.join("AGENTS.md")).unwrap();
         assert!(agents.starts_with("# My rules\n\nKeep this."));
         assert_eq!(agents.matches("sixloom:begin").count(), 1);
-        assert!(agents.contains("front end **vue**"));
+        assert!(agents.contains("`crates/tui/` interface **tui** (tui · ratatui)"));
     }
 
     #[test]

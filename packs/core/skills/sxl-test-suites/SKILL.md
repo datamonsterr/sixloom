@@ -1,6 +1,6 @@
 ---
 name: sxl-test-suites
-description: The sixloom test-suite loom, the first step of the build. It generates the acceptance suites before implementation (one Playwright e2e test per acceptance criterion, proven green against the preview, plus contract and integration tests per API operation, red until implemented), the backend skeleton and unit-test harness, the justfile, and fast, cached, parallel GitHub Actions CI. It then locks the acceptance tests. Use when the preview and API looms are approved, or when the user says "/sxl-test-suites", "generate tests", or "set up CI".
+description: The sixloom test-suite loom, the first step of the build. It generates the acceptance suites before implementation (one e2e test per acceptance criterion and interface, in the interface's own test tool, proven green against the preview, plus contract and integration tests per API operation, red until implemented), the backend skeleton and unit-test harness, the justfile, and fast, cached, parallel GitHub Actions CI. It then locks the acceptance tests. Use when the preview and API looms are approved, or when the user says "/sxl-test-suites", "generate tests", or "set up CI".
 ---
 
 # sxl-test-suites: the test-suite loom
@@ -8,25 +8,36 @@ description: The sixloom test-suite loom, the first step of the build. It genera
 Follow the **sxl-loom** protocol. Loom ID: `tests`. It starts once the
 `api` loom is approved (the preview was approved before it). Run it in a new
 session. The context pack is `spec/SPEC.md`, `design/SCREENS.md`,
-`contracts/openapi.yaml`, `apps/web/PREVIEW.md` and `system-design.mdx`
-(ADRs only).
+`contracts/openapi.yaml`, every interface's `PREVIEW.md` and
+`system-design.mdx` (ADRs only). Read the folders from `sixloom layout --json`.
 
-Load `playwright-cli` (or `webapp-testing`) for e2e, and `sxl-tdd` for the
-test-quality rules.
+Load `sxl-tdd` for the test-quality rules. Pick the e2e tool by interface kind:
 
-**Start from the verified templates in [files/](files/)**: `playwright.config.ts`,
-`e2e/fixtures.ts`, `contract/contract.ts`, plus an example spec for each.
-They encode the lessons below. Pin `@playwright/test` to the version of the
-browsers you have (`npx playwright --version`).
+| Interface kind | E2E tool | AC in the test name |
+|---|---|---|
+| web, desktop (Electron) | Playwright (`playwright-cli` skill); start from the verified templates in [files/](files/) | `test('F-001.AC1 shows …')` |
+| TUI | the framework harness: Ratatui `TestBackend`, Textual `Pilot`, Bubble Tea `teatest`, Ink `ink-testing-library`; or the real binary in a pseudo-terminal | `fn f001_ac1_shows_tasks()` / `def test_f001_ac1_…` / `func TestF001AC1…` |
+| CLI | run the built binary with the mock or real API; assert stdout and the exit code | same naming |
+| mobile | Maestro or Detox against the Expo/Flutter build | flow name starts with the AC ID |
+
+`sixloom tests lock` and `sixloom trace` read JS/TS, Rust, Python and Go
+tests. They map names such as `f001_ac1_…` back to `F-001.AC1`, and they treat
+`.skip`, `#[ignore]`, `@pytest.mark.skip` and `t.Skip` as disabling a test.
+If a language needs its tests inside its own package (a Rust TUI's
+`crates/tui/tests/acceptance`), add that folder to `[tests] locked` in
+`sixloom.toml`.
+
+For web, pin `@playwright/test` to the version of the browsers you have
+(`npx playwright --version`).
 
 ## Tiers
 
 | Tier | Location | One test per | Must be, at loom end |
 |---|---|---|---|
-| E2E | `tests/e2e/<feature>.spec.ts` | acceptance criterion | **green** against the preview (mock mode) |
+| E2E | `tests/e2e/<interface-id>/…` | acceptance criterion × interface | **green** against the preview (mock mode) |
 | Contract | `tests/contract/<operationId>.spec.ts` | operation × documented status | **red** (API returns 501) |
 | Integration | `tests/integration/` | key flow across endpoints | **red** |
-| Unit | inside `apps/*` | written during the build | harness only, plus 1 example |
+| Unit | inside each interface and service folder | written during the build | harness only, plus 1 example |
 
 ### E2E rules
 
@@ -63,7 +74,8 @@ copy the implementation's output.
 
 ### Backend skeleton ("dummy code")
 
-Scaffold `apps/api` with the stack from the ADRs. Generate a route for
+Scaffold every service from `sixloom layout` in its recorded folder, with the
+stack from the ADRs. Generate a route for
 every operation that returns `501 { code: "not_implemented" }`, a `/api/health`
 route (the Playwright `webServer` waits on it), the test-only reset seam, the
 database migration tooling with an empty first migration, the seed script, and
@@ -71,7 +83,7 @@ one passing example unit test. Now `just ci-fast` runs end to end, and every
 contract test fails for the right reason. Check it:
 `npx playwright test --project=contract | grep Received` shows only 501.
 
-End this loom with `sixloom loom end tests --all`, because it adds `apps/api`.
+End this loom with `sixloom loom end tests --all`.
 
 ## Task runner and CI
 
@@ -98,7 +110,7 @@ When every e2e test is green on the preview and every contract test is red
 for the right reason, run:
 
 ```bash
-sixloom tests lock     # hashes tests/e2e, tests/contract and tests/integration into .sixloom/tests.lock
+sixloom tests lock     # fingerprints every folder in [tests] locked into .sixloom/tests.lock
 ```
 
 Locking hashes each test's normalized assertions. The build may then repair

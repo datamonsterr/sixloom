@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "looms": {
+    "design": {
+      "status": "approved",
+      "started_at": "2026-10-27T20:11:27.256885056+00:00",
+      "ended_at": "2026-10-27T20:11:27.296466786+00:00",
+      "approved_at": "2026-10-27T20:11:27.301638589+00:00",
+      "approved_by": "Claude <noreply@anthropic.com>",
+      "inputs": {
+        "spec/SPEC.md#F-001": "7f29c15ddb6a96df9dceb1f524ae0da31bca2e563f953a2065332daa49b96cd6",
+        "spec/SPEC.md#intro": "dc2f2fb515b1a24074e5f18ae440e82a4116806b1a149530d6886ebf9d205a64",
+        "spec/SPEC.md#rest": "a65ef06d55a0f01a6827b2191cc7cbc0dba81b54aad050e58107a48300ed961c"
+      }
+    },
+    "preview": {
+      "status": "approved",
+      "started_at": "2026-10-27T20:11:50.061357592+00:00",
+      "ended_at": "2026-10-27T20:14:35.117931076+00:00",
+      "approved_at": "2026-10-27T20:14:35.123755854+00:00",
+      "approved_by": "Claude <noreply@anthropic.com>",
+      "inputs": {
+        "design/": "8cc55292d1675cb74ddfd489dc1cad1d4031b709b61e6a502787bb6f3816a95a",
+        "spec/SPEC.md#F-001": "7f29c15ddb6a96df9dceb1f524ae0da31bca2e563f953a2065332daa49b96cd6",
+        "spec/SPEC.md#intro": "dc2f2fb515b1a24074e5f18ae440e82a4116806b1a149530d6886ebf9d205a64",
+        "spec/SPEC.md#rest": "a65ef06d55a0f01a6827b2191cc7cbc0dba81b54aad050e58107a48300ed961c"
+      }
+    },
+    "spec": {
+      "status": "approved",
+      "started_at": "2026-10-27T20:11:27.105786289+00:00",
+      "ended_at": "2026-10-27T20:11:27.123734441+00:00",
+      "approved_at": "2026-10-27T20:11:27.128439824+00:00",
+      "approved_by": "Claude <noreply@anthropic.com>"
+    }
+  }
+}

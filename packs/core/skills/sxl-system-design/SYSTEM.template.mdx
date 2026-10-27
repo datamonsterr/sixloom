@@ -9,18 +9,20 @@ description: The big picture, covering what runs where and how a request flows.
 
 ```mermaid
 flowchart LR
-  user([User browser]) --> web[Web app<br/>apps/web]
-  web -->|HTTPS JSON| api[API service<br/>apps/api]
+  user([User]) --> web[Web app<br/>apps/web]
+  web -->|HTTPS JSON| api[API service<br/>services/api]
   api --> db[(PostgreSQL)]
   api -->|async| mail[[Email provider]]
 ```
 
-| Component | Owns | Writes | Why it exists |
-|---|---|---|---|
-| Web app | UI, client validation | — | every feature |
-| API service | business rules, auth | Project, Task, Membership | every feature |
-| PostgreSQL | durable state | — | data model |
-| Email provider | delivery | — | F-007 invite by email |
+Pattern: **monolith** (ADR-001). Folders match `sixloom layout`.
+
+| Component | Folder | Owns | Writes | Why it exists |
+|---|---|---|---|---|
+| Web app (interface `web`) | `apps/web` | UI, client validation | — | every feature |
+| API service (service `api`) | `services/api` | business rules, auth | Project, Task, Membership | every feature |
+| PostgreSQL | — | durable state | — | data model |
+| Email provider | — | delivery | — | F-007 invite by email |
 
 ## Key flows
 

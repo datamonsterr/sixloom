@@ -7,14 +7,14 @@ description: The sixloom API and documentation loom. It writes the OpenAPI contr
 
 Follow the **sxl-loom** protocol. Loom ID: `api`. Run it in a new session.
 The context pack is `spec/SPEC.md`, `design/SCREENS.md`, `data-model.mdx`,
-`system-design.mdx`, `apps/web/src/api/` and `apps/web/src/mocks/` (if the
-preview exists), and `sixloom.toml`.
+`system-design.mdx`, and each interface's API client and mocks (paths from
+`sixloom layout --json`).
 
 ## Step 1: The contract (`contracts/openapi.yaml`, OpenAPI 3.1)
 
-- Start from the approved preview: every call in `apps/web/src/api/` and
-  every MSW handler becomes an operation, and its fixtures become the schema
-  `example`s. The preview is final, so the contract follows it, not the other
+- Start from the approved preview: every method of every interface's API
+  client, and every mock handler, becomes an operation, and its fixtures
+  become the schema `example`s. The preview is final, so the contract follows it, not the other
   way round. Check that the data model can serve every one of them.
 - Each operation has an `operationId`, a summary, and a `description` whose
   last line is the trace marker `sxl: F-003.AC1, F-003.AC2`. The API reference
@@ -35,20 +35,27 @@ preview exists), and `sixloom.toml`.
 
 ## Step 2: Reconcile with the preview (the contract gate)
 
-1. Generate types from the contract into `apps/web/src/api/schema.d.ts` and
-   switch the client to them. Add a script:
-   `"gen:api": "npx -y openapi-typescript@7 ../../contracts/openapi.yaml -o src/api/schema.d.ts"`.
-   Run it through `npx`, not as a devDependency, because its peer range lags
-   behind new TypeScript majors. Error codes that only the client produces
-   (for example `offline`) stay a client-side union, not contract enums.
-2. Typecheck the web app. Then run the **contract gate**: copy
-   [check-mocks.template.mjs](check-mocks.template.mjs) to
-   `scripts/check-mocks.mjs`, list one request per documented status in
-   `cases`, then run `npx -y tsx scripts/check-mocks.mjs` (add it to the
-   justfile as `check-mocks`, which is part of `ci-fast`). It runs the real MSW
-   handlers through `msw/node` and validates each response against the
-   contract with ajv. It fails on undocumented statuses, so it can never
-   pass vacuously.
+1. Generate each interface's client types from the contract, and switch the
+   client to them:
+   - **TypeScript** (web, Ink, Expo, Electron): add a script
+     `"gen:api": "npx -y openapi-typescript@7 <contract path relative to the interface> -o <api_client>/schema.d.ts"`.
+     Run it through `npx`, not as a devDependency, because its peer range
+     lags behind new TypeScript majors.
+   - **Rust**: `progenitor` or `openapi-generator` (rust); **Go**: `oapi-codegen`;
+     **Python**: `datamodel-code-generator`; **Dart**: `openapi-generator` (dart-dio).
+   - Error codes that only the client produces (for example `offline`) stay a
+     client-side union, not contract enums.
+2. Build or typecheck each interface. Then run the **contract gate**: every
+   mock response must validate against the contract.
+   - **Web with MSW**: copy [check-mocks.template.mjs](check-mocks.template.mjs)
+     to `scripts/check-mocks.mjs` and point it at the interface's mocks. It
+     runs the real handlers through `msw/node`.
+   - **Other kinds**: validate the fixture files in the interface's mocks
+     folder against the matching response schemas, using the same ajv approach
+     on the JSON or YAML fixtures.
+   List one case per documented status, and add the gate to the justfile as
+   `check-mocks`, which is part of `ci-fast`. The gate fails on undocumented
+   statuses, so it can never pass vacuously.
 3. A mismatch almost always means that the contract is wrong, so fix it.
    Change the approved preview only when its data cannot be served (for
    example, a field the data model cannot provide). That change goes through
@@ -86,8 +93,8 @@ Required pages, in this sidebar order:
 Pages are `.mdx`. Keep prose short. A newcomer should be able to read the
 whole site in 30 minutes.
 
-This loom also changes `apps/web` (types, fixtures) and adds `scripts/`, so
-end it with `sixloom loom end api --all`.
+This loom also changes the interfaces (types, fixtures) and adds `scripts/`,
+so end it with `sixloom loom end api --all`.
 
 ## Gate (engineer reviewer)
 

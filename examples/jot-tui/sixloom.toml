@@ -1,0 +1,52 @@
+# sixloom project configuration. Docs: https://github.com/datamonsterr/sixloom
+
+services = []
+
+[project]
+name = "tuidemo"
+
+[agents]
+harnesses = [
+    "claude",
+    "codex",
+]
+
+[[interfaces]]
+id = "tui"
+kind = "tui"
+framework = "ratatui"
+ui_kit = "none"
+path = "crates/tui"
+api_client = "src/client.rs"
+mocks = "src/mocks.rs"
+
+[system]
+pattern = "local-only"
+
+[docs]
+engine = "starlight"
+content_dir = "docs/src/content/docs"
+
+[design]
+tool = "none"
+fidelity = "key"
+
+[build]
+max_parallel = 3
+max_attempts_per_slice = 3
+pr = true
+
+[validate]
+visual_tolerance = 0.005
+
+[skills]
+bank = false
+extra = []
+
+[tests]
+locked = [
+    "tests/e2e",
+    "tests/contract",
+    "tests/integration",
+    "crates/tui/tests",
+]

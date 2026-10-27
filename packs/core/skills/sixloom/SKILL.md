@@ -26,7 +26,7 @@ commands that would otherwise open the terminal UI.
 
 | User says | You run | Then |
 |---|---|---|
-| `sixloom init` / "set up sixloom" | Ask the init questions in one round (below), then `sixloom init --yes --agents … --frontend … --docs … --design …` (add `--adopt` if the repo already has code) | Summarize what was created, then route to `spec` |
+| `sixloom init` / "set up sixloom" | Ask the init questions in one round (below), then `sixloom init --yes --agents … --interface web:react-vite --docs … --design …` (add `--adopt` if the repo already has code) | Summarize what was created, then route to `spec` |
 | `sixloom status` / "where are we" | `sixloom status` | Show the three track lines and the next step |
 | `sixloom next` / "continue" / "what now" | `sixloom next` | Route to the loom it names |
 | `sixloom spec` / "write the spec" | `sixloom loom start spec` | Follow **sxl-specify** |
@@ -44,6 +44,9 @@ commands that would otherwise open the terminal UI.
 | "trace F-003" | `sixloom trace F-003` | Explain the row and any gaps |
 | `sixloom done` | `sixloom done` | Show the checklist; on an explicit "yes, done": `sixloom done --confirm` |
 | "add my skill at ./x" | `sixloom skills add ./x` | |
+| "where does the code go" / "show the layout" | `sixloom layout` | One line per interface and service folder |
+| "add a TUI" / "add a mobile app" | `sixloom layout interface add tui:ratatui[:path]` | The rules block and the skills update |
+| "move the API to crates/api" | `sixloom layout service remove api`, then `sixloom layout service add api --kind http-api --stack … --path crates/api` | Move the folder with `git mv` |
 | "switch docs to starlight" (or any choice) | edit `sixloom.toml`, then `sixloom update` | |
 
 If `loom start` refuses because an upstream loom is not approved, say which
@@ -55,8 +58,13 @@ one, and offer to run it first. Pass `--force` only when the user insists.
    there is code, recommend adopt.)
 2. Which coding agents will the team use? (Recommend the one you are running
    in, plus `codex`.)
-3. Front-end framework: `react-vite` (recommended), `nextjs`, `vue`, `nuxt`
-   or `sveltekit`. UI kit: `shadcn` (React) or `none`.
+3. Interfaces: what users touch, one or more of web (`react-vite`
+   recommended, `nextjs`, `vue`, `nuxt`, `sveltekit`), TUI (`ratatui`,
+   `bubbletea`, `textual`, `ink`), CLI (`clap`, `cobra`, `typer`,
+   `commander`), mobile (`expo`, `flutter`) or desktop (`tauri`, `electron`).
+   Pass each as `--interface kind:framework[:path]`. React web also takes a
+   UI kit: `shadcn` or `none`. Backend services are not asked here; the
+   system-design loom decides and records them.
 4. Docs engine: `fumadocs` (recommended), `docusaurus` or `starlight`.
 5. Design tool: `claude` (recommended), `stitch` (needs `stitch login`) or
    `none`.

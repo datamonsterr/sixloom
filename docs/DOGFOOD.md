@@ -46,6 +46,29 @@ project.
 | 18 | adopt | the init commit swept in the user's own untracked skill | stage only the skill dirs sixloom installed (regression test added) |
 | 19 | smoke test | OpenCode seemed to miss skills | OpenCode truncates piped output; the smoke test reads from a file |
 
+## Second round: configurable layout (web and TUI)
+
+The hard-coded `apps/web`/`apps/api` layout was replaced by interfaces and
+services in `sixloom.toml` (D-18). It was re-verified on two projects:
+
+- **Tasklet** (web) migrated to the new config: all looms stay approved,
+  the trace and `sixloom done` are unchanged, and the rules block lists the
+  real folders.
+- **Jot** ([`examples/jot-tui`](../examples/jot-tui)): a Ratatui TUI built
+  through spec → design → preview, with a mock client behind a trait,
+  `SXL_SCENARIO` states, `// sxl:` trace comments, and Rust acceptance tests
+  on `TestBackend`. `sixloom trace` maps `fn f001_ac1_…` to `F-001.AC1`;
+  `tests verify` catches a weakened `assert_eq!` and an added `#[ignore]`;
+  the system check passes with `local-only` and no services. A TUI/CLI project
+  installs no web-only skills.
+
+| # | Found while | Problem | Fix |
+|---|---|---|---|
+| 20 | migrating Tasklet | the path key format changed (`src/api/` vs `src/api`) and made looms stale | keys compared without the trailing slash |
+| 21 | trace | generated `schema.d.ts` copies the contract's `sxl:` lines and counted as UI evidence | skip generated files (`.d.ts`, `@generated`, "auto-generated", "Code generated") |
+| 22 | TUI layout | adding a locked test folder meant hand-editing TOML, which duplicated a section | `sixloom layout locked add/remove` |
+| 23 | the new command | a subcommand argument named `dir` clashed with the global `--dir` and crashed at runtime | renamed; `Cli::command().debug_assert()` unit test |
+
 ## Not covered by this run
 
 - Real model sessions in each agent. The smoke test checks discovery offline,

@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "locked_at": "2026-10-27T20:13:12.993527477+00:00",
+  "tests": {
+    "crates/tui/tests/acceptance.rs::f001_ac1_newest_first": "7a4b0e4119263d6c",
+    "crates/tui/tests/acceptance.rs::f001_ac2_no_notes_yet": "418770febe18dd54"
+  }
+}

@@ -10,7 +10,9 @@ use crate::change;
 use crate::config::Config;
 use crate::harness;
 use crate::lock;
-use crate::state::{self, expand, files_under, loom, now, Loom, State, Status, View, LOOMS};
+use crate::state::{
+    self, expand, expand_all, files_under, loom, now, Loom, State, Status, View, LOOMS,
+};
 use crate::trace;
 
 pub const CONTEXT_DIR: &str = ".sixloom/context";
@@ -31,10 +33,9 @@ pub fn tokens(text: &str) -> usize {
 /// the directory structure, then `<file path="…">` entries. A fresh agent session
 /// reads this one file instead of rediscovering the project.
 pub fn write_pack(root: &Path, cfg: &Config, l: &Loom) -> Result<Pack> {
-    let files: Vec<String> = l
-        .inputs
+    let files: Vec<String> = expand_all(l.inputs, cfg)
         .iter()
-        .flat_map(|p| files_under(root, &expand(p, cfg)))
+        .flat_map(|p| files_under(root, p))
         .collect();
     let mut body = String::new();
     let mut listed = vec![];
@@ -105,20 +106,30 @@ pub fn start(root: &Path, cfg: &Config, id: &str, force: bool) -> Result<Pack> {
 pub fn check(root: &Path, cfg: &Config, id: &str) -> Result<Vec<String>> {
     let l = loom(id)?;
     let mut p = vec![];
-    let exists = |rel: &str| !files_under(root, &expand(rel, cfg)).is_empty();
-    let read = |rel: &str| fs::read_to_string(root.join(expand(rel, cfg))).unwrap_or_default();
-    for o in l.outputs {
-        if !exists(o)
-            && !matches!(
-                *o,
-                "docs/diagrams/" | ".sixloom/runs/" | "justfile" | ".github/workflows/"
-            )
-        {
-            p.push(format!("missing output {}", expand(o, cfg)));
+    let exists = |rel: &str| !files_under(root, rel).is_empty();
+    let read = |rel: &str| {
+        let path = expand(rel, cfg).pop().unwrap_or_default();
+        fs::read_to_string(root.join(path)).unwrap_or_default()
+    };
+    // Outputs a loom may legitimately leave empty (optional diagrams, files other looms add).
+    let optional = [
+        "docs/diagrams/",
+        ".sixloom/runs/",
+        "justfile",
+        ".github/workflows/",
+        "sixloom.toml",
+        "{rules}",
+        "{svc}",
+    ];
+    for o in l.outputs.iter().filter(|o| !optional.contains(o)) {
+        for path in expand(o, cfg) {
+            if !exists(&path) {
+                p.push(format!("missing output {path}"));
+            }
         }
     }
     let trace_gaps = |pred: &dyn Fn(&str) -> bool| -> Vec<String> {
-        trace::build(root, &cfg.docs.content_dir, None)
+        trace::build(root, cfg, None)
             .map(|t| t.gaps.into_iter().filter(|g| pred(g)).collect())
             .unwrap_or_else(|e| vec![e.to_string()])
     };
@@ -134,9 +145,22 @@ pub fn check(root: &Path, cfg: &Config, id: &str) -> Result<Vec<String>> {
                 g.contains("not on any screen") || g.contains("not defined")
             }));
         }
-        "preview" if !exists("apps/web/PREVIEW.md") => {
-            p.push("missing apps/web/PREVIEW.md (screen × state URL table)".into())
+        "preview" if cfg.interfaces.is_empty() => p.push(
+            "no interface configured: add one with `sixloom layout interface add <kind>:<framework>`".into(),
+        ),
+        "preview" => {
+            for doc in cfg.interfaces.iter().map(|i| i.preview_doc()) {
+                if !exists(&doc) {
+                    p.push(format!("missing {doc} (every screen × state and how to reach it)"));
+                }
+            }
         }
+        "system" if cfg.system.pattern == "undecided" => p.push(
+            "architecture pattern undecided: record it with `sixloom layout pattern <pattern>`".into(),
+        ),
+        "system" if cfg.services.is_empty() && cfg.system.pattern != "local-only" => p.push(
+            "no services recorded: add each with `sixloom layout service add <id> --kind … --stack … --path …`".into(),
+        ),
         "data" if !read("{content}/architecture/data-model.mdx").contains("erDiagram") => {
             p.push("data-model.mdx has no Mermaid erDiagram".into())
         }
@@ -155,7 +179,7 @@ pub fn check(root: &Path, cfg: &Config, id: &str) -> Result<Vec<String>> {
             }));
         }
         "tests" | "build" => {
-            match lock::verify(root) {
+            match lock::verify(root, &cfg.tests.locked) {
                 Ok(v) => p.extend(v),
                 Err(e) => p.push(e.to_string()),
             }
@@ -218,9 +242,8 @@ pub fn end(root: &Path, cfg: &Config, id: &str, o: EndOpts) -> Result<Ended> {
     let mut paths: Vec<String> = if o.all {
         vec![".".into()]
     } else {
-        l.outputs
-            .iter()
-            .map(|o| expand(o, cfg))
+        expand_all(l.outputs, cfg)
+            .into_iter()
             .chain(["spec".into(), ".sixloom".into()])
             .collect()
     };
@@ -415,14 +438,14 @@ pub fn done_checks(root: &Path, cfg: &Config) -> Result<Vec<DoneCheck>> {
         detail: open.join(", "),
     });
 
-    let lockp = lock::verify(root).unwrap_or_else(|e| vec![e.to_string()]);
+    let lockp = lock::verify(root, &cfg.tests.locked).unwrap_or_else(|e| vec![e.to_string()]);
     out.push(DoneCheck {
         label: "Locked tests intact (sixloom tests verify)",
         ok: lockp.is_empty(),
         detail: lockp.join("; "),
     });
 
-    let gaps = trace::build(root, &cfg.docs.content_dir, None)
+    let gaps = trace::build(root, cfg, None)
         .map(|t| t.gaps)
         .unwrap_or_else(|e| vec![e.to_string()]);
     out.push(DoneCheck {
@@ -536,5 +559,55 @@ mod tests {
         );
         assert_eq!(next(root, &cfg).unwrap()[0].0.id, "design");
         assert!(!done_checks(root, &cfg).unwrap()[0].ok);
+    }
+
+    #[test]
+    fn paths_follow_the_configured_layout() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        let mut cfg = init::default_config("t");
+        cfg.agents.harnesses = vec!["codex".into()];
+        cfg.interfaces = vec![crate::config::Interface::new(
+            "tui",
+            "tui",
+            "ratatui",
+            Some("crates/tui"),
+        )];
+        init::run(root, &cfg, init::Mode::Adopt, false).unwrap();
+        let preview = check(root, &cfg, "preview").unwrap();
+        assert!(
+            preview.iter().any(|p| p.contains("crates/tui/PREVIEW.md")),
+            "{preview:?}"
+        );
+        assert!(
+            !preview.iter().any(|p| p.contains("apps/web")),
+            "{preview:?}"
+        );
+        let data = loom("data").unwrap();
+        let inputs = state::expand_all(data.inputs, &cfg);
+        assert!(
+            inputs.contains(&"crates/tui/src/api".to_string()),
+            "{inputs:?}"
+        );
+        // The system loom is not done until the pattern and services are recorded.
+        let sys = check(root, &cfg, "system").unwrap();
+        assert!(
+            sys.iter().any(|p| p.contains("pattern undecided")),
+            "{sys:?}"
+        );
+        cfg.system.pattern = "monolith".into();
+        let sys = check(root, &cfg, "system").unwrap();
+        assert!(
+            sys.iter().any(|p| p.contains("no services recorded")),
+            "{sys:?}"
+        );
+        cfg.services.push(crate::config::Service {
+            id: "core".into(),
+            kind: "library".into(),
+            stack: "rust".into(),
+            path: "crates/core".into(),
+        });
+        let build = state::expand_all(loom("build").unwrap().outputs, &cfg);
+        assert_eq!(build, vec!["crates/tui/", "crates/core/", ".sixloom/runs/"]);
     }
 }

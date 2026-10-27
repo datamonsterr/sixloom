@@ -4,13 +4,19 @@
 This project is built with the [sixloom](https://github.com/datamonsterr/sixloom) loom workflow.
 Run `sixloom status` to see where it stands and `sixloom next` for what to do next.
 
-- **Looms**, one per session: spec → design → preview (product track); spec → data → system → api (engineering track); then tests → build → validate. Each has an `sxl-*` skill; follow `sxl-loom` to start and end one.
-- **Truth**: `spec/SPEC.md` for behavior (IDs `F-001`, `F-001.AC1`), and `contracts/openapi.yaml` for data shape. Cite IDs everywhere.
+- **Looms**, one per session: spec → design → preview (product track); data → system → api (engineering track, from the approved preview); then tests → build → validate. Each has an `sxl-*` skill; follow `sxl-loom` to start and end one.
+- **Truth**: `spec/SPEC.md` for behavior (IDs `F-001`, `F-001.AC1`) and `contracts/openapi.yaml` for data shape. Cite IDs only as `sxl:` markers, never in product behavior.
 - **Changes** go through `sxl-patch` (`spec/changes/CH-xxxx`), never straight into code.
 - **Locked tests** (`.sixloom/tests.lock`): never delete, skip or weaken them; `sixloom tests verify` runs in CI.
 - **Before every push**: `just ci-fast`.
 
-Layout: `spec/` spec and changes · `design/` design system, screens, comps · `apps/web` preview → real front end · `apps/api` backend · `contracts/` OpenAPI · `docs/` docs site ({{content_dir}}) · `tests/` e2e, contract, integration · `.sixloom/` state, locks, run logs.
+### Layout ({{pattern}})
 
-Choices: front end **{{frontend}}** ({{ui_kit}}), docs **{{docs}}**, design **{{design}}**. Your own skills can sit next to the sixloom ones in {{skills_dirs}}.
+Code lives only in the folders below; `sixloom.toml` is their source of truth and every sixloom command, check and test reads it. Never hard-code another path. To add, move or remove an interface or service, run `sixloom layout interface|service …` (it updates `sixloom.toml`, this block and the skills), then follow the new layout.
+
+{{layout}}
+
+Fixed folders: `spec/` spec and changes · `design/` design system, screens, comps · `contracts/` API contract · `docs/` docs site (pages in `{{content_dir}}`) · `tests/` locked e2e, contract, integration · `.sixloom/` state, locks, run logs.
+
+Choices: docs **{{docs}}**, design **{{design}}**. Your own skills can sit next to the sixloom ones in {{skills_dirs}}.
 <!-- sixloom:end -->

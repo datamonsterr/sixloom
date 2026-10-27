@@ -43,10 +43,55 @@
         "./packs/core/skills/sxl-validate",
         "./packs/engineering/skills/sxl-tdd",
         "./packs/engineering/skills/grilling",
-        "./packs/engineering/skills/diagnosing-bugs",
+        "./packs/engineering/skills/diagnosing-bugs"
+      ]
+    },
+    {
+      "name": "sixloom-web",
+      "source": "./",
+      "strict": false,
+      "description": "sixloom skills for any web or desktop interface: visual design direction, web interface guidelines, Playwright browser testing.",
+      "version": "0.1.0",
+      "author": {
+        "name": "datamonsterr",
+        "url": "https://github.com/datamonsterr"
+      },
+      "homepage": "https://github.com/datamonsterr/sixloom",
+      "license": "MIT",
+      "category": "development",
+      "keywords": [
+        "sixloom",
+        "spec-driven",
+        "tdd",
+        "agents"
+      ],
+      "skills": [
         "./packs/design/skills/frontend-design",
         "./packs/design/skills/web-design-guidelines",
         "./packs/testing/skills/playwright-cli"
+      ]
+    },
+    {
+      "name": "sixloom-expo",
+      "source": "./",
+      "strict": false,
+      "description": "sixloom front-end skills for Expo / React Native mobile interfaces (Vercel React Native guide).",
+      "version": "0.1.0",
+      "author": {
+        "name": "datamonsterr",
+        "url": "https://github.com/datamonsterr"
+      },
+      "homepage": "https://github.com/datamonsterr/sixloom",
+      "license": "MIT",
+      "category": "development",
+      "keywords": [
+        "sixloom",
+        "spec-driven",
+        "tdd",
+        "agents"
+      ],
+      "skills": [
+        "./packs/frontend/skills/vercel-react-native-skills"
       ]
     },
     {

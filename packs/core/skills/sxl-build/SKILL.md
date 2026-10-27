@@ -9,6 +9,11 @@ Follow the **sxl-loom** protocol. Loom ID: `build`. The context pack is
 `spec/SPEC.md`, `contracts/openapi.yaml`, `system-design.mdx` (ADRs),
 `data-model.mdx`, `.sixloom/tests.lock` and `sixloom.toml` `[build]`.
 
+Code goes only into the interface and service folders recorded in
+`sixloom layout`. A slice that needs a new service or folder records it
+first with `sixloom layout service add …`, adds an ADR line to
+`system-design.mdx`, and re-approves the system loom.
+
 **The goal** (state it at the top of the session and in `.sixloom/runs/build.md`):
 
 > The real app behaves exactly like the preview and exactly as the API

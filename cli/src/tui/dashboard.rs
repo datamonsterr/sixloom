@@ -74,7 +74,7 @@ impl<'a> App<'a> {
             .iter()
             .map(|l| self.state.view(self.root, self.cfg, l))
             .collect();
-        self.trace = trace::build(self.root, &self.cfg.docs.content_dir, None).ok();
+        self.trace = trace::build(self.root, self.cfg, None).ok();
         self.changes = change::list(self.root).unwrap_or_default();
         if let Ok(cat) = catalog::load() {
             let chosen: Vec<String> = skills::selected(&cat, self.cfg)
@@ -212,8 +212,12 @@ fn draw(f: &mut Frame, app: &mut App) {
             Span::styled(
                 format!(
                     "{} · {} · docs {} · design {} · agents {}",
-                    c.frontend.framework,
-                    c.frontend.ui_kit,
+                    c.interfaces
+                        .iter()
+                        .map(|i| i.label())
+                        .collect::<Vec<_>>()
+                        .join(", "),
+                    c.system.pattern,
                     c.docs.engine,
                     c.design.tool,
                     c.agents.harnesses.join(",")
@@ -391,8 +395,7 @@ fn draw_looms(f: &mut Frame, app: &mut App, area: Rect) {
             Style::new().fg(MUTED),
         ));
     }
-    for i in l.inputs {
-        let p = state::expand(i, app.cfg);
+    for p in state::expand_all(l.inputs, app.cfg) {
         let there = !state::files_under(app.root, &p).is_empty();
         lines.push(Line::from(vec![
             Span::styled(
@@ -403,8 +406,8 @@ fn draw_looms(f: &mut Frame, app: &mut App, area: Rect) {
         ]));
     }
     lines.push(Line::styled("Produces", Style::new().fg(ACCENT)));
-    for o in l.outputs {
-        lines.push(Line::raw(format!("  {}", state::expand(o, app.cfg))));
+    for o in state::expand_all(l.outputs, app.cfg) {
+        lines.push(Line::raw(format!("  {o}")));
     }
     lines.push(Line::raw(""));
     lines.push(Line::styled(

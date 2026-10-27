@@ -1,0 +1,25 @@
+{
+  "dirs": [
+    ".claude/skills",
+    ".agents/skills"
+  ],
+  "skills": [
+    "sixloom",
+    "sxl-loom",
+    "sxl-specify",
+    "sxl-design",
+    "sxl-preview",
+    "sxl-data-model",
+    "sxl-system-design",
+    "sxl-api-docs",
+    "sxl-test-suites",
+    "sxl-build",
+    "sxl-patch",
+    "sxl-validate",
+    "sxl-tdd",
+    "grilling",
+    "diagnosing-bugs",
+    "sxl-docs-starlight"
+  ],
+  "bank": []
+}

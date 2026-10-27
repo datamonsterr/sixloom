@@ -31,13 +31,34 @@ minutes. Class diagrams and folder layouts do not belong here.
    runs in CI without paid services.
 5. **Non-functional notes** from the spec only: data residency, retention,
    expected load. Do not invent SLOs the spec does not ask for.
+6. **Record the layout.** The pattern and every service's folder are
+   project rules, not prose. Choose the pattern (`monolith`,
+   `modular-monolith`, `microservices`, `serverless`, `local-only`) and the
+   folders in an ADR, then record them:
+
+   ```bash
+   sixloom layout pattern monolith
+   sixloom layout service add api --kind http-api --stack hono-node --path services/api
+   sixloom layout service add worker --kind worker --stack hono-node --path services/worker
+   ```
+
+   Pick folders that fit the stack's conventions: `services/<id>` by default,
+   `crates/<id>` in a Rust workspace, `cmd/<id>` + `internal/` in Go, or
+   `packages/<id>` in a JS monorepo. Use the same convention for the
+   interfaces; move them with `sixloom layout interface …` if needed. A product
+   with no backend records `local-only` and no services. This updates
+   `sixloom.toml`, the rules block in `AGENTS.md`/`CLAUDE.md` and the skills,
+   and every later loom (tests, build, CI) reads the folders from there.
+   `sixloom loom check system` fails until the pattern and services are
+   recorded.
 
 ## Output
 
 `<content>/architecture/system-design.mdx` (see [SYSTEM.template.mdx](SYSTEM.template.mdx)) with:
 
 - A Mermaid `flowchart` of the components. **This is the source of truth.**
-- The components table, the sequence diagrams, and the ADRs. Each
+- The components table, with the same folder names as `sixloom layout`, the
+  sequence diagrams, and the ADRs. Each
   sequence diagram and each component gets a trace marker,
   `<sub>sxl: F-003</sub>`, naming the features it serves.
 
@@ -48,10 +69,14 @@ node and edge with simple grid coordinates, using the same labels as the
 Mermaid source. Keep the two in sync at every loom end. Writing draw.io XML by
 hand costs many tokens, so update the Mermaid first and regenerate.
 
+End with `sixloom loom end system --approve`. It commits the page, the
+diagram, `sixloom.toml` and the refreshed rules.
+
 ## Gate (engineer reviewer)
 
 1. Is every component justified by a feature or rule?
-2. Is the stack in the ADRs one the team can build and run?
+2. Is the stack in the ADRs one the team can build and run, and are the
+   pattern and folders in `sixloom layout` the ones you want?
 3. Do the failure paths match the error states the preview shows?
 4. Can the whole system run locally and in CI without paid services?
 5. Is anything here you would remove for v1?

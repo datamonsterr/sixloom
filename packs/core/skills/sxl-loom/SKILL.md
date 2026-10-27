@@ -12,7 +12,7 @@ artifact. The looms are:
 |---|---|---|---|
 | `spec` | sxl-specify | `spec/SPEC.md` | product |
 | `design` | sxl-design | `design/DESIGN.md`, `design/SCREENS.md`, `design/exports/` (`.dc.html` or Stitch HTML) | product |
-| `preview` | sxl-preview | `apps/web/` running on mocks | product |
+| `preview` | sxl-preview | every interface (web, TUI, CLI, …) running on mocks | product |
 | `data` | sxl-data-model | `docs/<content>/architecture/data-model.mdx` | engineer |
 | `system` | sxl-system-design | `docs/<content>/architecture/system-design.mdx` | engineer |
 | `api` | sxl-api-docs | `contracts/openapi.yaml` and the docs site | engineer |
@@ -76,7 +76,7 @@ sixloom approve <loom>       # records the human approval (git author)
 
 `loom end` commits the loom's declared outputs as `sxl(<loom>): <summary>`, and
 lists any other changed files it left out. If the loom changed them on
-purpose (the api loom touches `apps/web`; the tests loom adds `apps/api`), end
+purpose (for example, the api loom touches an interface's client types), end
 it with `--all`. Use `--no-commit` to only mark it in review.
 
 After a change, re-approve the looms you checked and found unaffected in one
@@ -113,6 +113,13 @@ current files. When an input changes, every downstream loom becomes `stale`.
 A stale loom is not wrong; it needs a targeted update and a new gate.
 
 ## Rules
+
+- **Paths come from `sixloom layout`, never from memory.** Interfaces (web,
+  TUI, CLI, mobile, desktop) and services each have a folder recorded in
+  `sixloom.toml`. Run `sixloom layout --json` before writing code, and change
+  the layout only with `sixloom layout interface|service|pattern …`, which also
+  refreshes the rules block and the skills. The fixed folders are `spec/`,
+  `design/`, `contracts/`, `docs/`, `tests/` and `.sixloom/`.
 
 - `spec/SPEC.md` is the single truth for behavior. Every other artifact
   follows it, and where they disagree, the spec wins until a change record

@@ -262,12 +262,35 @@ add their own skills with `sixloom skills add`.
 
 ---
 
+### W14. The folder layout assumed one web app and one API
+
+`apps/web` and `apps/api` were hard-coded, but an interface can be a TUI, a
+CLI, a mobile or desktop app, there can be several, and the number of services
+and their pattern depend on the system design.
+
+**D-18 (confirmed): the layout is configuration, not convention.**
+`sixloom.toml` records:
+
+- **`[[interfaces]]`**, chosen at `init`: kind (`web`, `tui`, `cli`,
+  `mobile`, `desktop`), framework, folder, API client module, and mocks.
+- **`[system] pattern`** and **`[[services]]`** (kind, stack, folder),
+  recorded by the system-design loom with `sixloom layout`.
+- **`[tests] locked`**: the folders of the locked acceptance tests.
+
+Every loom resolves its context pack, outputs, checks and stale detection
+from these. So do the trace (`data-sxl` on the web, an `sxl:` comment
+elsewhere) and the test lock, which reads JS/TS, Rust, Python and Go tests,
+with AC IDs in titles or function names. The rules block in
+`AGENTS.md`/`CLAUDE.md` is regenerated whenever the layout changes, so agents
+always see the current folders. `sixloom loom check system` fails until the
+pattern and services are recorded.
+
 ## 3. Choices for v0.1
 
 | Area | Choice | Why |
 |---|---|---|
 | Docs engines | **Fumadocs** (default), **Docusaurus**, **Starlight** | MDX, Mermaid, and an OpenAPI reference generated from the contract in all three. Fumadocs is closest to the GitBook feel, Docusaurus is the most widely used, and Starlight is the lightest. |
-| Front end | React + Vite (default), Next.js, Vue, Nuxt, SvelteKit | Each backed by a vetted upstream skill (Vercel, antfu, Svelte). |
+| Interfaces | web (React + Vite default, Next.js, Vue, Nuxt, SvelteKit), TUI (Ratatui, Bubble Tea, Textual, Ink), CLI (clap, Cobra, Typer, Commander), mobile (Expo, Flutter), desktop (Tauri, Electron) | Web and Expo are backed by vetted upstream skills; the others follow the generic kind patterns in `sxl-preview`. |
 | Design | Claude Design (default), Google Stitch, none | Stitch through Google's official `stitch` CLI skill. |
 | Mocks | MSW | The same handlers serve the browser, Node tests and Playwright. |
 | E2E | Playwright | Parallel and sharded, with Microsoft's `playwright-cli` skill. |
