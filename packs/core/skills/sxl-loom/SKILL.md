@@ -74,8 +74,13 @@ sixloom loom end <loom>      # validates the artifacts, records input hashes
 sixloom approve <loom>       # records the human approval (git author)
 ```
 
-`loom end` commits the artifact as `sxl(<loom>): <summary>`. Use `--no-commit`
-to stage without committing. No CLI? Update `.sixloom/state.json` (set the
+`loom end` commits the loom's declared outputs as `sxl(<loom>): <summary>`, and
+lists any other changed files it left out. If the loom changed them on
+purpose (the api loom touches `apps/web`; the tests loom adds `apps/api`), end
+it with `--all`. Use `--no-commit` to only mark it in review.
+
+After a change, re-approve the looms you checked and found unaffected in one
+go: `sixloom approve data system api` makes a single commit. No CLI? Update `.sixloom/state.json` (set the
 loom's `status` to `approved` and its `approved_at` timestamp) and commit with
 the same message format.
 

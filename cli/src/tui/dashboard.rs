@@ -109,11 +109,18 @@ impl<'a> App<'a> {
                     l.id, p.path, p.tokens
                 )
             }),
-            'e' => loom::end(self.root, self.cfg, l.id, None, true, false).map(|m| {
-                m.map(|m| format!("committed: {m}"))
-                    .unwrap_or_else(|| format!("{} in review", l.id))
-            }),
-            'a' => loom::approve(self.root, self.cfg, l.id)
+            'e' => {
+                let opts = loom::EndOpts {
+                    commit: true,
+                    ..Default::default()
+                };
+                loom::end(self.root, self.cfg, l.id, opts).map(|r| {
+                    r.commit
+                        .map(|m| format!("committed: {m}"))
+                        .unwrap_or_else(|| format!("{} in review", l.id))
+                })
+            }
+            'a' => loom::approve_and_commit(self.root, self.cfg, l.id)
                 .map(|by| format!("{} approved by {by}", l.id)),
             _ => return,
         };

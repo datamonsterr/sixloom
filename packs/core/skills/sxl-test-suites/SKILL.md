@@ -14,6 +14,11 @@ session. The context pack is `spec/SPEC.md`, `design/SCREENS.md`,
 Load `playwright-cli` (or `webapp-testing`) for e2e, and `sxl-tdd` for the
 test-quality rules.
 
+**Start from the verified templates in [files/](files/)**: `playwright.config.ts`,
+`e2e/fixtures.ts`, `contract/contract.ts`, plus an example spec for each.
+They encode the lessons below. Pin `@playwright/test` to the version of the
+browsers you have (`npx playwright --version`).
+
 ## Tiers
 
 | Tier | Location | One test per | Must be, at loom end |
@@ -29,9 +34,19 @@ test-quality rules.
   `sixloom trace` reads these titles.
 - Select elements by `data-testid="<screen>.<control>"`, role, or label.
   Never use CSS structure or text that the copy may change.
-- Each test sets its own state: in mock mode with `?sxl=<scenario>` and the
-  mock db, in real mode through API calls in a fixture. The fixture switches
-  on `E2E_MODE=mock|real`, so **the same file runs in both modes**.
+- Each test sets its own state through one fixture, `open(scenario)`. In
+  mock mode it is `?sxl=<scenario>`. In real mode it resets state through a
+  **test-only seam** (`POST /api/__test/reset`, registered only when
+  `NODE_ENV=test`, and never in the contract), seeds through the public API,
+  and forces server errors with `page.route`. The fixture switches on
+  `E2E_MODE=mock|real`, so **the same file runs in both modes**.
+- **Transient states** (skeletons, "submitting") need latency. The real-mode
+  fixture delays the data requests like the mocks do, or a fast local API
+  makes those assertions flaky. That is a setup fix, so it never touches
+  assertions.
+- **Different ports per mode** (mock 5173, real 5174). Otherwise
+  `reuseExistingServer` silently runs the "real" suite against a leftover
+  mock server.
 - No `waitForTimeout`. Wait for a locator or a response.
 - **Prove it**: run the suite against the preview (`just e2e-mock`). Every
   test must pass. A failing test means the test is wrong or the preview is
@@ -49,10 +64,14 @@ copy the implementation's output.
 ### Backend skeleton ("dummy code")
 
 Scaffold `apps/api` with the stack from the ADRs. Generate a route for
-every operation that returns `501 { code: "not_implemented" }`, the database
-migration tooling with an empty first migration, the seed script, and one
-passing example unit test. Now `just ci-fast` runs end to end, and every
-contract test fails for the right reason.
+every operation that returns `501 { code: "not_implemented" }`, a `/api/health`
+route (the Playwright `webServer` waits on it), the test-only reset seam, the
+database migration tooling with an empty first migration, the seed script, and
+one passing example unit test. Now `just ci-fast` runs end to end, and every
+contract test fails for the right reason. Check it:
+`npx playwright test --project=contract | grep Received` shows only 501.
+
+End this loom with `sixloom loom end tests --all`, because it adds `apps/api`.
 
 ## Task runner and CI
 

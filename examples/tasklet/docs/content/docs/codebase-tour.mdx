@@ -1,0 +1,12 @@
+---
+title: Codebase tour
+description: Where things live and where each kind of change goes.
+---
+
+| Path | What | Change it when |
+|---|---|---|
+| `spec/SPEC.md` | features and acceptance criteria | behavior changes (through a change record) |
+| `apps/web` | the front end (started as the preview) | UI work |
+| `apps/api` | Hono API on `node:sqlite` | server behavior |
+| `contracts/openapi.yaml` | API contract | API shape changes |
+| `tests/` | locked e2e and contract tests | never weaken; add freely |

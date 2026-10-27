@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "looms": {
+    "api": {
+      "status": "approved",
+      "started_at": "2026-10-27T17:54:51.841152049+00:00",
+      "ended_at": "2026-10-27T18:01:57.038212149+00:00",
+      "approved_at": "2026-10-27T18:13:33.816578317+00:00",
+      "approved_by": "Claude <noreply@anthropic.com>",
+      "inputs": {
+        "apps/web/src/api/": "e60f1227d727fa89d3301c5018ae4882d28c53a26993668885c7cca1d84e1d38",
+        "apps/web/src/mocks/": "7c982fee79b8186fcb26b0384062947b4d716d7f2117f03cb9a67ff5d539457e",
+        "design/SCREENS.md": "e55e2d2544d32ca10731e45cc24c51aa986a1446bf7433949659b804c3c7369d",
+        "docs/content/docs/architecture/data-model.mdx": "aa8a76a626469a1c5467017233769918fbc6d34580afd97ca9eab43f26cdb730",
+        "docs/content/docs/architecture/system-design.mdx": "c16c1b48528c4c2b7a8d9d0e58fe4b7edb11ed523365466a832ebe0d507c928b",
+        "spec/SPEC.md#F-001": "0a6b3f06990769cca2f7a39010d30e0697b669faafe94ad1df61e6e968354ca8",
+        "spec/SPEC.md#F-002": "57fd5f643816cf2ec476773b6b9afc8f3de36e0d58bd769be24be348831cf668",
+        "spec/SPEC.md#intro": "45fa568838df83248ee58c7218e5369a7c0a2756f2677ed7bd8262cebecd1e10",
+        "spec/SPEC.md#rest": "1e3d1fd8fcecc50ae3fd39580e42cdf9e5912f1ccbb5b80823445f37d15183dd"
+      }
+    },
+    "build": {
+      "status": "approved",
+      "started_at": "2026-10-27T18:06:39.403442386+00:00",
+      "ended_at": "2026-10-27T18:09:48.277099505+00:00",
+      "approved_at": "2026-10-27T18:12:52.359122458+00:00",
+      "approved_by": "Claude <noreply@anthropic.com>",
+      "inputs": {
+        ".sixloom/tests.lock": "302af6131e81f0dc58bd9efccf8f53380eec632ddc7631f8eb1dc11ff9787a7b",
+        "contracts/openapi.yaml": "83069eef7b1b3fc113db39693e37c866ba0979423c968cea0ec5288bbda6c19e",
+        "spec/SPEC.md#F-001": "0a6b3f06990769cca2f7a39010d30e0697b669faafe94ad1df61e6e968354ca8",
+        "spec/SPEC.md#F-002": "57fd5f643816cf2ec476773b6b9afc8f3de36e0d58bd769be24be348831cf668",
+        "spec/SPEC.md#intro": "45fa568838df83248ee58c7218e5369a7c0a2756f2677ed7bd8262cebecd1e10",
+        "spec/SPEC.md#rest": "1e3d1fd8fcecc50ae3fd39580e42cdf9e5912f1ccbb5b80823445f37d15183dd"
+      }
+    },
+    "data": {
+      "status": "approved",
+      "started_at": "2026-10-27T17:54:29.039616023+00:00",
+      "ended_at": "2026-10-27T17:54:29.050580836+00:00",
+      "approved_at": "2026-10-27T18:13:33.780939413+00:00",
+      "approved_by": "Claude <noreply@anthropic.com>",
+      "inputs": {
+        "apps/web/src/api/": "e60f1227d727fa89d3301c5018ae4882d28c53a26993668885c7cca1d84e1d38",
+        "apps/web/src/mocks/": "7c982fee79b8186fcb26b0384062947b4d716d7f2117f03cb9a67ff5d539457e",
+        "design/SCREENS.md": "e55e2d2544d32ca10731e45cc24c51aa986a1446bf7433949659b804c3c7369d",
+        "spec/SPEC.md#F-001": "0a6b3f06990769cca2f7a39010d30e0697b669faafe94ad1df61e6e968354ca8",
+        "spec/SPEC.md#F-002": "57fd5f643816cf2ec476773b6b9afc8f3de36e0d58bd769be24be348831cf668",
+        "spec/SPEC.md#intro": "45fa568838df83248ee58c7218e5369a7c0a2756f2677ed7bd8262cebecd1e10",
+        "spec/SPEC.md#rest": "1e3d1fd8fcecc50ae3fd39580e42cdf9e5912f1ccbb5b80823445f37d15183dd"
+      }
+    },
+    "design": {
+      "status": "approved",
+      "started_at": "2026-10-27T17:51:35.944890129+00:00",
+      "ended_at": "2026-10-27T18:12:40.922474282+00:00",
+      "approved_at": "2026-10-27T18:12:51.550132897+00:00",
+      "approved_by": "Claude <noreply@anthropic.com>",
+      "inputs": {
+        "spec/SPEC.md#F-001": "0a6b3f06990769cca2f7a39010d30e0697b669faafe94ad1df61e6e968354ca8",
+        "spec/SPEC.md#F-002": "57fd5f643816cf2ec476773b6b9afc8f3de36e0d58bd769be24be348831cf668",
+        "spec/SPEC.md#intro": "45fa568838df83248ee58c7218e5369a7c0a2756f2677ed7bd8262cebecd1e10",
+        "spec/SPEC.md#rest": "1e3d1fd8fcecc50ae3fd39580e42cdf9e5912f1ccbb5b80823445f37d15183dd"
+      }
+    },
+    "preview": {
+      "status": "approved",
+      "started_at": "2026-10-27T17:51:57.538389293+00:00",
+      "ended_at": "2026-10-27T17:54:22.041342189+00:00",
+      "approved_at": "2026-10-27T18:12:51.710826109+00:00",
+      "approved_by": "Claude <noreply@anthropic.com>",
+      "inputs": {
+        "design/": "8249f3eb39332e1cc7af7b1cd88d3c73466565883eb47828472331c857f10216",
+        "spec/SPEC.md#F-001": "0a6b3f06990769cca2f7a39010d30e0697b669faafe94ad1df61e6e968354ca8",
+        "spec/SPEC.md#F-002": "57fd5f643816cf2ec476773b6b9afc8f3de36e0d58bd769be24be348831cf668",
+        "spec/SPEC.md#intro": "45fa568838df83248ee58c7218e5369a7c0a2756f2677ed7bd8262cebecd1e10",
+        "spec/SPEC.md#rest": "1e3d1fd8fcecc50ae3fd39580e42cdf9e5912f1ccbb5b80823445f37d15183dd"
+      }
+    },
+    "spec": {
+      "status": "approved",
+      "started_at": "2026-10-27T17:51:35.780459984+00:00",
+      "ended_at": "2026-10-27T17:51:35.804636747+00:00",
+      "approved_at": "2026-10-27T17:51:35.939416460+00:00",
+      "approved_by": "Claude <noreply@anthropic.com>"
+    },
+    "system": {
+      "status": "approved",
+      "started_at": "2026-10-27T17:54:51.743348211+00:00",
+      "ended_at": "2026-10-27T17:54:51.753172415+00:00",
+      "approved_at": "2026-10-27T18:13:33.808891387+00:00",
+      "approved_by": "Claude <noreply@anthropic.com>",
+      "inputs": {
+        "docs/content/docs/architecture/data-model.mdx": "aa8a76a626469a1c5467017233769918fbc6d34580afd97ca9eab43f26cdb730",
+        "spec/SPEC.md#F-001": "0a6b3f06990769cca2f7a39010d30e0697b669faafe94ad1df61e6e968354ca8",
+        "spec/SPEC.md#F-002": "57fd5f643816cf2ec476773b6b9afc8f3de36e0d58bd769be24be348831cf668",
+        "spec/SPEC.md#intro": "45fa568838df83248ee58c7218e5369a7c0a2756f2677ed7bd8262cebecd1e10",
+        "spec/SPEC.md#rest": "1e3d1fd8fcecc50ae3fd39580e42cdf9e5912f1ccbb5b80823445f37d15183dd"
+      }
+    },
+    "tests": {
+      "status": "approved",
+      "started_at": "2026-10-27T18:04:27.507796239+00:00",
+      "ended_at": "2026-10-27T18:06:39.280982757+00:00",
+      "approved_at": "2026-10-27T18:12:52.215403119+00:00",
+      "approved_by": "Claude <noreply@anthropic.com>",
+      "inputs": {
+        "apps/web/PREVIEW.md": "1f7210e95595c3ebaf21a71fdf568185d1f3418ee69d359ca9323136e03026ff",
+        "contracts/openapi.yaml": "83069eef7b1b3fc113db39693e37c866ba0979423c968cea0ec5288bbda6c19e",
+        "design/SCREENS.md": "e55e2d2544d32ca10731e45cc24c51aa986a1446bf7433949659b804c3c7369d",
+        "spec/SPEC.md#F-001": "0a6b3f06990769cca2f7a39010d30e0697b669faafe94ad1df61e6e968354ca8",
+        "spec/SPEC.md#F-002": "57fd5f643816cf2ec476773b6b9afc8f3de36e0d58bd769be24be348831cf668",
+        "spec/SPEC.md#intro": "45fa568838df83248ee58c7218e5369a7c0a2756f2677ed7bd8262cebecd1e10",
+        "spec/SPEC.md#rest": "1e3d1fd8fcecc50ae3fd39580e42cdf9e5912f1ccbb5b80823445f37d15183dd"
+      }
+    },
+    "validate": {
+      "status": "approved",
+      "started_at": "2026-10-27T18:09:48.398245507+00:00",
+      "ended_at": "2026-10-27T18:10:47.445809768+00:00",
+      "approved_at": "2026-10-27T18:12:52.511891219+00:00",
+      "approved_by": "Claude <noreply@anthropic.com>",
+      "inputs": {
+        ".sixloom/tests.lock": "302af6131e81f0dc58bd9efccf8f53380eec632ddc7631f8eb1dc11ff9787a7b",
+        "apps/web/PREVIEW.md": "1f7210e95595c3ebaf21a71fdf568185d1f3418ee69d359ca9323136e03026ff",
+        "contracts/openapi.yaml": "83069eef7b1b3fc113db39693e37c866ba0979423c968cea0ec5288bbda6c19e",
+        "spec/SPEC.md#F-001": "0a6b3f06990769cca2f7a39010d30e0697b669faafe94ad1df61e6e968354ca8",
+        "spec/SPEC.md#F-002": "57fd5f643816cf2ec476773b6b9afc8f3de36e0d58bd769be24be348831cf668",
+        "spec/SPEC.md#intro": "45fa568838df83248ee58c7218e5369a7c0a2756f2677ed7bd8262cebecd1e10",
+        "spec/SPEC.md#rest": "1e3d1fd8fcecc50ae3fd39580e42cdf9e5912f1ccbb5b80823445f37d15183dd"
+      }
+    }
+  }
+}

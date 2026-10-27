@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "locked_at": "2026-10-27T18:11:54.662043904+00:00",
+  "tests": {
+    "tests/contract/tasks.spec.ts::createTask 201 returns the trimmed task (F-002.AC1)": "e6392eca037f5a65",
+    "tests/contract/tasks.spec.ts::createTask 422 on a title over 120 characters (R-01)": "22cacf3530992236",
+    "tests/contract/tasks.spec.ts::createTask 422 on an empty title (F-002.AC2)": "9a84ce806093ca2e",
+    "tests/contract/tasks.spec.ts::listTasks 200 returns tasks newest first (F-001.AC1)": "9793857e7b8619cc",
+    "tests/e2e/f001-see-tasks.spec.ts::F-001.AC1 shows my tasks newest first": "4e62ca4fb7fce770",
+    "tests/e2e/f001-see-tasks.spec.ts::F-001.AC2 shows \"All clear\" when there are none": "1841f9c73258b10e",
+    "tests/e2e/f001-see-tasks.spec.ts::F-001.AC3 shows an error with a Retry that reloads": "6618b25540174129",
+    "tests/e2e/f002-add-task.spec.ts::F-002.AC1 adds the task at the top and clears the box": "13643b13b4140f4f",
+    "tests/e2e/f002-add-task.spec.ts::F-002.AC2 rejects an empty title": "cb0f6a8e65bfd6f9"
+  }
+}

@@ -333,14 +333,47 @@ pub fn hash_paths(root: &Path, paths: &[String]) -> String {
     hex(&h.finalize())
 }
 
+pub const SPEC: &str = "spec/SPEC.md";
+
+/// Hash of each input path. The spec is hashed per feature section
+/// (`spec/SPEC.md#F-001`, plus `#intro` for everything before the first feature),
+/// so stale looms can say which feature changed.
 pub fn input_hashes(root: &Path, cfg: &Config, l: &Loom) -> BTreeMap<String, String> {
-    l.inputs
-        .iter()
-        .map(|p| {
-            let p = expand(p, cfg);
-            let h = hash_paths(root, std::slice::from_ref(&p));
-            (p, h)
-        })
+    let mut out = BTreeMap::new();
+    for p in l.inputs.iter().map(|p| expand(p, cfg)) {
+        if p == SPEC {
+            if let Ok(text) = fs::read_to_string(root.join(SPEC)) {
+                out.extend(spec_sections(&text));
+                continue;
+            }
+        }
+        let h = hash_paths(root, std::slice::from_ref(&p));
+        out.insert(p, h);
+    }
+    out
+}
+
+fn spec_sections(text: &str) -> Vec<(String, String)> {
+    let head = regex::Regex::new(r"^#{2,4}\s+(F-\d{3,})\b").unwrap();
+    let mut sections: Vec<(String, String)> = vec![("intro".into(), String::new())];
+    for line in text.lines() {
+        if let Some(c) = head.captures(line) {
+            sections.push((c[1].to_string(), String::new()));
+        } else if line.starts_with("## ") && sections.len() > 1 {
+            // A level-2 heading after the features (Key flows, Rules, …) belongs to the tail.
+            sections.push(("rest".into(), String::new()));
+        }
+        let cur = sections.last_mut().unwrap();
+        cur.1.push_str(line.trim_end());
+        cur.1.push('\n');
+    }
+    let mut merged: BTreeMap<String, String> = BTreeMap::new();
+    for (k, body) in sections {
+        merged.entry(k).or_default().push_str(&body);
+    }
+    merged
+        .into_iter()
+        .map(|(k, body)| (format!("{SPEC}#{k}"), hex(&Sha256::digest(body.as_bytes()))))
         .collect()
 }
 
@@ -350,11 +383,17 @@ pub fn changed_inputs(root: &Path, cfg: &Config, l: &Loom, st: &State) -> Vec<St
     if recorded.is_empty() {
         return vec![];
     }
-    input_hashes(root, cfg, l)
-        .into_iter()
-        .filter(|(p, h)| recorded.get(p) != Some(h))
-        .map(|(p, _)| p)
-        .collect()
+    let now = input_hashes(root, cfg, l);
+    let mut changed: Vec<String> = now
+        .iter()
+        .filter(|(p, h)| recorded.get(*p) != Some(*h))
+        .map(|(p, _)| p.clone())
+        .collect();
+    // A recorded section that disappeared (feature removed) is a change too.
+    changed.extend(recorded.keys().filter(|k| !now.contains_key(*k)).cloned());
+    changed.sort();
+    changed.dedup();
+    changed
 }
 
 pub fn hex(bytes: &[u8]) -> String {

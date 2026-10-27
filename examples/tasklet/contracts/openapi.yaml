@@ -1,0 +1,87 @@
+openapi: 3.1.0
+info:
+  title: Tasklet API
+  version: 0.1.0
+  license: { name: Proprietary, identifier: LicenseRef-Proprietary }
+  description: The API behind the Tasklet preview. Every operation names the acceptance criteria it serves.
+security: []  # public in v1 (no accounts)
+servers:
+  - url: /api
+paths:
+  /tasks:
+    get:
+      operationId: listTasks
+      summary: List tasks, newest first
+      description: |
+        Returns every task ordered by `createdAt` descending.
+
+        sxl: F-001.AC1, F-001.AC2, F-001.AC3
+      responses:
+        '200':
+          description: The tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Task' }
+              example:
+                items:
+                  - { id: 6f1c2e1a-2b7d-4a55-9d0e-1f2a3b4c5d6e, title: Call the landlord, createdAt: '2026-10-26T09:00:00Z' }
+        '500': { $ref: '#/components/responses/Error' }
+    post:
+      operationId: createTask
+      summary: Add a task
+      description: |
+        Creates a task from a trimmed title of 1–120 characters (R-01).
+
+        sxl: F-002.AC1, F-002.AC2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string, example: Water the plants }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Task' }
+        '422':
+          description: Invalid title (`code` = `validation`, `fields.title` explains why)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { code: validation, message: Invalid input, fields: { title: Title is required } }
+components:
+  schemas:
+    Task:
+      type: object
+      required: [id, title, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string, minLength: 1, maxLength: 120 }
+        createdAt: { type: string, format: date-time }
+      example: { id: 6f1c2e1a-2b7d-4a55-9d0e-1f2a3b4c5d6e, title: Buy coffee beans, createdAt: '2026-10-25T18:30:00Z' }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string, enum: [validation, internal, not_implemented] }
+        message: { type: string }
+        fields:
+          type: object
+          additionalProperties: { type: string }
+  responses:
+    Error:
+      description: Server error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

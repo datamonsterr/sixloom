@@ -4,3 +4,4 @@ apps/web/.preview-shots/
 test-results/
 playwright-report/
 .otherskill/cache/
+.sixloom/context/

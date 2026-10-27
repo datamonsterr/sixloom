@@ -1,0 +1,48 @@
+---
+title: System design
+description: What runs where and how a request flows.
+---
+
+## Components
+
+<sub>sxl: F-001 · F-002</sub>
+
+```mermaid
+flowchart LR
+  user([Browser]) --> web[Web app<br/>apps/web]
+  web -->|HTTPS JSON /api| api[API service<br/>apps/api]
+  api --> db[(SQLite file)]
+```
+
+| Component | Owns | Writes | Why it exists |
+|---|---|---|---|
+| Web app | UI, client validation | — | every feature |
+| API service | rules (R-01), persistence | Task | every feature |
+| SQLite | durable tasks | — | data model |
+
+## Key flows
+
+### Add a task
+
+<sub>sxl: F-002.AC1 · F-002.AC2</sub>
+
+```mermaid
+sequenceDiagram
+  participant W as Web
+  participant A as API
+  participant D as DB
+  W->>A: POST /api/tasks {title}
+  alt empty or >120 chars
+    A-->>W: 422 {code: validation, fields.title}
+  else ok
+    A->>D: insert
+    A-->>W: 201 Task
+  end
+```
+
+## Decisions
+
+### ADR-001 Node + Hono + node:sqlite
+- **Context**: one small JSON API, team already writes TypeScript, CI must need no services.
+- **Decision**: Hono on Node 22 with the built-in `node:sqlite`; tests run against a temp file.
+- **Consequences**: no ORM; migrations are plain SQL run at startup.

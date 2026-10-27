@@ -33,7 +33,9 @@ check() { # name count
 n=$(timeout 120 "$NPX/codex" debug prompt-input hi 2>/dev/null | grep -oE '(sxl-[a-z-]+|sixloom|grilling|diagnosing-bugs|frontend-design|web-design-guidelines|playwright-cli|vercel-[a-z-]+|vite|vitest|shadcn-ui):' | sort -u | wc -l | tr -d ' ')
 check codex "$n"
 
-n=$(timeout 120 "$NPX/opencode" debug skill 2>/dev/null | grep -c '"location": "/' || true)
+# opencode truncates large output written to a pipe, so go through a file.
+timeout 120 "$NPX/opencode" debug skill > "$WORK/opencode-skills.json" 2>/dev/null || true
+n=$(grep -oE '"name": "[^"]+"' "$WORK/opencode-skills.json" | grep -vc customize-opencode || true)
 check opencode "$n"
 
 echo "{\"$P\": \"TRUST_FOLDER\"}" > "$HOME/.gemini/trustedFolders.json"

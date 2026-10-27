@@ -1489,6 +1489,7 @@ dependencies = [
  "clap",
  "crossterm",
  "include_dir",
+ "libc",
  "ratatui",
  "regex",
  "serde",

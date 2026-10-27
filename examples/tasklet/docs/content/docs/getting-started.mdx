@@ -1,0 +1,15 @@
+---
+title: Getting started
+description: Install, run and seed Tasklet locally.
+---
+
+Prerequisites: Node 22 and [just](https://just.systems).
+
+```bash
+just install   # npm ci in apps/web, apps/api, docs, tests
+just dev       # API on :8787, web on :5173 against the real API
+just preview   # web on :5173 against mocks
+just docs      # this site on :3000
+```
+
+Environment: `DB_PATH` (SQLite file for the API, default `data/tasklet.db`).

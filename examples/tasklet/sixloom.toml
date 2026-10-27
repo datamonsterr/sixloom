@@ -1,0 +1,34 @@
+# sixloom project configuration. Docs: https://github.com/datamonsterr/sixloom
+
+[project]
+name = "tasklet"
+
+[agents]
+harnesses = [
+    "claude",
+    "codex",
+]
+
+[frontend]
+framework = "react-vite"
+ui_kit = "none"
+
+[docs]
+engine = "fumadocs"
+content_dir = "docs/content/docs"
+
+[design]
+tool = "claude"
+fidelity = "key"
+
+[build]
+max_parallel = 3
+max_attempts_per_slice = 3
+pr = true
+
+[validate]
+visual_tolerance = 0.005
+
+[skills]
+bank = false
+extra = []

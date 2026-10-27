@@ -33,7 +33,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: taiki-e/install-action@v2
         with: { tool: 'just' }
-      - run: curl -fsSL https://raw.githubusercontent.com/datamonsterr/sixloom/main/install.sh | sh
+      - run: curl -fsSL https://raw.githubusercontent.com/datamonsterr/sixloom/main/install.sh | sh && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Locked acceptance tests unchanged
         run: sixloom tests verify
 
@@ -65,6 +65,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.api == 'true' || needs.changes.outputs.tests == 'true'
     runs-on: ubuntu-latest
+    # Delete the services block if the ADRs chose an embedded database (SQLite).
     services:
       db:
         image: postgres:16

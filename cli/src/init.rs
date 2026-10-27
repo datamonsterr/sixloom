@@ -47,16 +47,9 @@ pub fn run(root: &Path, cfg: &Config, mode: Mode, force: bool) -> Result<Outcome
     fs::create_dir_all(root)?;
     let mut created = vec![];
 
-    if !root.join(".git").exists() && Command::new("git").arg("--version").output().is_ok() {
-        let ok = Command::new("git")
-            .args(["init", "-q"])
-            .current_dir(root)
-            .status()
-            .map(|s| s.success())
-            .unwrap_or(false);
-        if ok {
-            created.push(".git/".into());
-        }
+    let in_repo = inside_git(root);
+    if !in_repo && git(root, &["init", "-q"]) {
+        created.push(".git/".into());
     }
 
     cfg.save(root)?;
@@ -84,7 +77,63 @@ pub fn run(root: &Path, cfg: &Config, mode: Mode, force: bool) -> Result<Outcome
         created.push(f);
     }
     let skills = skills::sync(root, cfg)?;
+    commit_scaffold(root, cfg, &skills.native)?;
     Ok(Outcome { created, skills })
+}
+
+fn git(root: &Path, args: &[&str]) -> bool {
+    Command::new("git")
+        .args(args)
+        .current_dir(root)
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+}
+
+fn inside_git(root: &Path) -> bool {
+    git(root, &["rev-parse", "--is-inside-work-tree"])
+}
+
+/// Commit only the files sixloom wrote, leaving anything else the user has staged alone.
+fn commit_scaffold(root: &Path, cfg: &Config, installed: &[String]) -> Result<()> {
+    if !inside_git(root) {
+        return Ok(());
+    }
+    let (dirs, files) = harness::targets(&cfg.agents.harnesses)?;
+    let mut paths: Vec<String> = [
+        config::FILE,
+        ".sixloom",
+        "spec",
+        "design",
+        "contracts",
+        ".gitignore",
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    // Only the skills sixloom installed: the user's own skills in the same dirs stay theirs.
+    .chain(
+        dirs.iter()
+            .flat_map(|d| installed.iter().map(move |s| format!("{d}/{s}"))),
+    )
+    .chain(files.iter().map(|f| f.to_string()))
+    .collect();
+    if cfg.skills.bank {
+        paths.extend([
+            ".otherskill".to_string(),
+            crate::skills::OTHERSKILL_CONFIG.to_string(),
+        ]);
+    }
+    paths.retain(|p| root.join(p).exists());
+    let mut add = vec!["add", "--"];
+    add.extend(paths.iter().map(String::as_str));
+    if !git(root, &add) {
+        return Ok(());
+    }
+    let mut commit = vec!["commit", "-q", "-m", "sxl(init): add sixloom", "--"];
+    commit.extend(paths.iter().map(String::as_str));
+    // No identity configured or nothing to commit: leave the files staged.
+    git(root, &commit);
+    Ok(())
 }
 
 /// Write or refresh the managed block in every harness instruction file.
@@ -232,5 +281,47 @@ mod tests {
         assert!(agents.starts_with("# My rules\n\nKeep this."));
         assert_eq!(agents.matches("sixloom:begin").count(), 1);
         assert!(agents.contains("front end **vue**"));
+    }
+
+    #[test]
+    fn adopt_commits_only_sixloom_files() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        let g = |args: &[&str]| assert!(git(root, args), "git {args:?}");
+        g(&["init", "-q"]);
+        g(&["config", "user.email", "t@t.io"]);
+        g(&["config", "user.name", "T"]);
+        fs::write(root.join("app.js"), "1").unwrap();
+        g(&["add", "-A"]);
+        g(&["commit", "-qm", "legacy"]);
+        fs::write(root.join("app.js"), "2").unwrap();
+        fs::create_dir_all(root.join(".claude/skills/mine")).unwrap();
+        fs::write(
+            root.join(".claude/skills/mine/SKILL.md"),
+            "---\nname: mine\ndescription: x\n---\n",
+        )
+        .unwrap();
+        let mut cfg = default_config("x");
+        cfg.agents.harnesses = vec!["claude".into()];
+        run(root, &cfg, Mode::Adopt, false).unwrap();
+        let out = Command::new("git")
+            .args(["status", "--porcelain"])
+            .current_dir(root)
+            .output()
+            .unwrap();
+        let status = String::from_utf8_lossy(&out.stdout);
+        assert!(
+            status.contains(" M app.js"),
+            "user edits stay uncommitted: {status}"
+        );
+        assert!(
+            status.contains("?? .claude/skills/mine/"),
+            "user skill stays untracked: {status}"
+        );
+        assert_eq!(
+            status.lines().count(),
+            2,
+            "everything sixloom wrote is committed: {status}"
+        );
     }
 }

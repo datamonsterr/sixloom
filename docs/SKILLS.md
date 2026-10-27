@@ -66,9 +66,9 @@ Docs sites with MDX, Mermaid and generated OpenAPI references: Fumadocs, Docusau
 
 | Skill | What it does | Installed when | Source |
 |---|---|---|---|
-| `sxl-docs-fumadocs` |  | `docs:fumadocs` | sixloom · MIT |
-| `sxl-docs-docusaurus` |  | `docs:docusaurus` | sixloom · MIT |
-| `sxl-docs-starlight` |  | `docs:starlight` | sixloom · MIT |
+| `sxl-docs-fumadocs` | Scaffold and maintain a sixloom docs site with Fumadocs (Next.js, GitBook-like). | `docs:fumadocs` | sixloom · MIT |
+| `sxl-docs-docusaurus` | Scaffold and maintain a sixloom docs site with Docusaurus 3. | `docs:docusaurus` | sixloom · MIT |
+| `sxl-docs-starlight` | Scaffold and maintain a sixloom docs site with Astro Starlight. | `docs:starlight` | sixloom · MIT |
 
 ## Testing (`testing`)
 

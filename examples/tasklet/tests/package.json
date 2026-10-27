@@ -1,0 +1,16 @@
+{
+  "name": "tasklet-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "e2e": "playwright test --project=e2e",
+    "contract": "playwright test --project=contract"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "1.63.0",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "yaml": "^2.8.1"
+  }
+}

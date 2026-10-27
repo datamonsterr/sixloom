@@ -41,12 +41,17 @@ One change = one decision. Split a feedback list into several records.
 1. **Spec**: edit `SPEC.md`. Changed ACs keep their ID, and the feature
    status becomes `changed`. New ACs get the next number. Removed ACs are
    struck through, never deleted. Status → `specced`.
-2. **Looms**: `sixloom status` now shows the downstream looms as `stale`.
-   Update only the affected parts (screen state, mock, endpoint, entity),
-   using the respective sxl skill, then run `sixloom loom end <loom>` for
-   each one.
+2. **Looms**: `sixloom status` now shows the downstream looms as `stale`,
+   naming the changed spec section (`spec/SPEC.md#F-001`). Use
+   `sixloom trace F-001.AC2` to find what actually cites the change. Update only
+   those parts (screen state, mock, endpoint, entity, test) with the
+   respective sxl skill, then run `sixloom loom end <loom> --all --approve`.
+   Re-approve the stale looms you checked and found unaffected together:
+   `sixloom approve data system api`.
 3. **Tests**: change or add the locked tests for the affected ACs, prove them
-   on the preview (mock mode), then run `sixloom tests lock`. Status →
+   on the preview (mock mode), then run `sixloom tests lock`. Changing a
+   locked test's title or assertions is allowed **only** under an accepted
+   change record, and `sixloom tests verify` fails until you re-lock. Status →
    `tested`.
 4. **Code**: run the slice through sxl-build's loop. Status → `built`.
 

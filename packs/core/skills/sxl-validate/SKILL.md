@@ -19,15 +19,21 @@ Follow the **sxl-loom** protocol. Loom ID: `validate`. Write the report to
 3. **Preview versus real (visual).** For each screen × state in
    `apps/web/PREVIEW.md` that is reachable in real mode (ready, empty,
    validation-error, and the others you can seed), take the screenshot in
-   real mode and compare it with the preview screenshot
-   (`apps/web/.preview-shots/`). Use Playwright `toHaveScreenshot` with a
-   `maxDiffPixelRatio` of `validate.visual_tolerance` (default 0.005).
+   real mode and compare it with the preview. Copy
+   [visual.spec.template.ts](visual.spec.template.ts) to
+   `tests/visual/visual.spec.ts` and add a `visual` project to the
+   Playwright config. Record the baseline from the preview
+   (`E2E_MODE=mock npx playwright test --project=visual --update-snapshots`),
+   then compare in real mode (`E2E_MODE=real …`) with a `maxDiffPixelRatio` of
+   `validate.visual_tolerance` (default 0.005). The same spec runs axe on
+   every state.
    Differences caused only by data are fine; layout, missing elements and
    wrong states are findings.
 4. **Docs truth.** The OpenAPI contract test passes against the running API.
    Every "Getting started" command in the docs runs as written on a clean
    checkout.
 5. **Quality floor.** In real mode, every screen state has no console errors
+   (except the failed request the error scenario causes on purpose)
    and no serious or critical axe accessibility violations
    (`@axe-core/playwright`). CI is green on the main branch for the commit
    being validated. No slice is still `blocked` in `.sixloom/runs/build.md`.

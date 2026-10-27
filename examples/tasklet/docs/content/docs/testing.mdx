@@ -1,0 +1,12 @@
+---
+title: Testing
+description: Test tiers, how to run them, and the locked-test rules.
+---
+
+| Tier | Where | Run |
+|---|---|---|
+| E2E (one per acceptance criterion, locked) | `tests/e2e` | `just e2e-mock` against the preview, `just e2e` against the real API |
+| Contract (one per operation × status, locked) | `tests/contract` | `just contract` |
+| Unit | `apps/*` | `just unit` |
+
+Locked tests are fingerprinted in `.sixloom/tests.lock`. CI runs `sixloom tests verify`: never delete, skip or weaken one; raise a change record instead.

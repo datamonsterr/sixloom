@@ -95,6 +95,11 @@ automatically.
 The full reasoning, with each weak point found in review and the decision
 taken, is in [docs/FRAMEWORK.md](docs/FRAMEWORK.md).
 
+**See a complete run:** [`examples/tasklet`](examples/tasklet) is a small app
+built with sixloom from an empty directory to sign-off, one commit per loom,
+including one feedback cycle. [docs/DOGFOOD.md](docs/DOGFOOD.md) lists what
+that run tested and the 19 bugs it found and fixed.
+
 ## Install
 
 Pick **one** of the three ways. All three give your agent the same skills.
@@ -305,9 +310,9 @@ sixloom init [DIR] [--adopt] [--agents a,b] [--frontend X] [--ui-kit X] [--docs 
 sixloom status [--json]         every loom: approved / in review / in progress / ready / blocked / stale (+ changed inputs)
 sixloom next                    next loom + the invocation for each of your agents
 sixloom loom start <loom>       check prerequisites, write .sixloom/context/<loom>.xml, mark in progress
-sixloom loom end <loom> [--approve] [-m msg] [--no-commit]   machine checks, then commit `sxl(<loom>): …`
+sixloom loom end <loom> [--approve] [--all] [-m msg] [--no-commit]   machine checks, then commit `sxl(<loom>): …`
 sixloom loom check <loom>       machine checks only
-sixloom approve <loom>          record human approval (git author) and input hashes
+sixloom approve <loom>...       record human approval (git author) and input hashes; several looms → one commit
 sixloom approve change CH-0003  accept a change record
 sixloom change new "<title>" [--kind feedback|bug|sync|test] [--affects F-001.AC2]
 sixloom change list | status <id> <status> | log

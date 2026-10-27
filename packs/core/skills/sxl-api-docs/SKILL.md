@@ -28,16 +28,27 @@ preview exists), and `sixloom.toml`.
   reference them.
 - Include an `example` on every request and response schema. The examples
   double as mock fixtures and test data.
+- A public API declares `security: []` at the root explicitly, and every
+  API declares `info.license`. Without them, Redocly's default rules fail.
 - Validate with `npx @redocly/cli lint contracts/openapi.yaml`, with no errors
   allowed.
 
 ## Step 2: Reconcile with the preview (the contract gate)
 
-1. Generate types from the contract (`openapi-typescript`) into
-   `apps/web/src/api/schema.d.ts` and switch the client to use them.
-2. Typecheck the web app. Then validate every mock fixture and handler
-   response against the contract schemas (a small script using `ajv` with the
-   contract's components is enough; save it as `scripts/check-mocks.*`).
+1. Generate types from the contract into `apps/web/src/api/schema.d.ts` and
+   switch the client to them. Add a script:
+   `"gen:api": "npx -y openapi-typescript@7 ../../contracts/openapi.yaml -o src/api/schema.d.ts"`.
+   Run it through `npx`, not as a devDependency, because its peer range lags
+   behind new TypeScript majors. Error codes that only the client produces
+   (for example `offline`) stay a client-side union, not contract enums.
+2. Typecheck the web app. Then run the **contract gate**: copy
+   [check-mocks.template.mjs](check-mocks.template.mjs) to
+   `scripts/check-mocks.mjs`, list one request per documented status in
+   `cases`, then run `npx -y tsx scripts/check-mocks.mjs` (add it to the
+   justfile as `check-mocks`, which is part of `ci-fast`). It runs the real MSW
+   handlers through `msw/node` and validates each response against the
+   contract with ajv. It fails on undocumented statuses, so it can never
+   pass vacuously.
 3. A mismatch almost always means that the contract is wrong, so fix it.
    Change the approved preview only when its data cannot be served (for
    example, a field the data model cannot provide). That change goes through
@@ -50,6 +61,13 @@ The engine comes from `sixloom.toml` `docs.engine`. Load the matching skill:
 `sxl-docs-fumadocs`, `sxl-docs-docusaurus` or `sxl-docs-starlight`. It
 scaffolds `docs/`, wires Mermaid, and generates the API reference pages from
 `contracts/openapi.yaml`.
+
+`docs/` already holds the data-model and system-design pages and
+`docs/diagrams/`, and every scaffolder refuses a non-empty directory. So:
+`mv docs .docs-pages`, scaffold, copy `.docs-pages/<content>/.` into the new
+content directory and `.docs-pages/diagrams` into `docs/`, then delete
+`.docs-pages`. Rename the template's site title and repo links to the
+product's.
 
 Required pages, in this sidebar order:
 
@@ -67,6 +85,9 @@ Required pages, in this sidebar order:
 
 Pages are `.mdx`. Keep prose short. A newcomer should be able to read the
 whole site in 30 minutes.
+
+This loom also changes `apps/web` (types, fixtures) and adds `scripts/`, so
+end it with `sixloom loom end api --all`.
 
 ## Gate (engineer reviewer)
 

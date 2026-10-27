@@ -41,11 +41,12 @@ Rules:
 4. **Trace without touching behavior**: the element that delivers an AC gets
    `data-sxl="F-003.AC1"` (several IDs are space-separated), so a reviewer can
    inspect any element in devtools and paste the ID into the docs search or
-   `sixloom trace`. Strip `data-sxl` from production builds with a build
-   transform: for React, `babel-plugin-react-remove-properties` with
-   `properties: ["data-sxl"]` (or an SWC or esbuild equivalent); for
-   Vue, Svelte or Astro, a compile-time node transform. Keep it in dev and
-   preview mode.
+   `sixloom trace`. Strip `data-sxl` from production builds with
+   [files/sxl-strip.ts](files/sxl-strip.ts), a framework-agnostic Vite
+   plugin (`plugins: [react(), sxlStrip()]`). It handles both React/Vue
+   object props and Svelte/Astro HTML strings. After `vite build`, check
+   with `grep -c data-sxl dist/assets/*.js`, which should print 0. Dev and
+   preview keep the attributes.
 
 ## Mock behavior: make the states reviewable
 
@@ -64,6 +65,11 @@ Rules:
 - **Statefulness**: create, update and delete operations change in-memory
   fixtures for the session, so flows feel real (create a project, then see
   it in the list).
+- **Realistic fixtures**: give IDs, dates and emails their real formats
+  (UUIDs, ISO timestamps). The API loom validates every fixture against the
+  contract, and `id: 't1'` will fail a `format: uuid` schema.
+- **Mock mode**: put `VITE_API_MODE=mock` in `apps/web/.env.mock`, and make the
+  `preview` script `vite --mode mock`.
 
 ## Build order
 

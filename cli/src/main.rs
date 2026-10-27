@@ -52,10 +52,9 @@ enum Cmd {
     Loom(LoomCmd),
     /// Record human approval of a loom (`approve preview`) or a change (`approve change CH-0003`)
     Approve {
-        /// Loom ID, or `change`
-        target: String,
-        /// Change ID when target is `change`
-        id: Option<String>,
+        /// One or more loom IDs (committed together), or `change CH-0003`
+        #[arg(required = true)]
+        targets: Vec<String>,
     },
     /// Change records: the changelog stack under spec/changes/
     #[command(subcommand)]
@@ -146,6 +145,9 @@ enum LoomCmd {
         /// Also record approval (when the human already said yes to the gate)
         #[arg(long)]
         approve: bool,
+        /// Commit every changed file, not just the loom's outputs
+        #[arg(long)]
+        all: bool,
         #[arg(long)]
         skip_checks: bool,
     },
@@ -195,6 +197,11 @@ enum SkillsCmd {
 }
 
 fn main() {
+    // Exit quietly when output is piped into `head` and the like, as other CLIs do.
+    #[cfg(unix)]
+    unsafe {
+        libc::signal(libc::SIGPIPE, libc::SIG_DFL);
+    }
     if let Err(e) = run() {
         eprintln!("{} {e:#}", red("error:"));
         std::process::exit(1);
@@ -242,16 +249,18 @@ fn run() -> Result<()> {
         Cmd::Status { json } => cmd_status(&cli.dir, json),
         Cmd::Next => cmd_next(&cli.dir),
         Cmd::Loom(l) => cmd_loom(&cli.dir, l),
-        Cmd::Approve { target, id } => {
+        Cmd::Approve { targets } => {
             let (root, cfg) = project(&cli.dir)?;
-            if target == "change" {
-                let id = id.context("usage: sixloom approve change CH-0001")?;
-                let c = loom::approve_change(&root, &id)?;
+            if targets[0] == "change" {
+                let [_, id] = targets.as_slice() else {
+                    bail!("usage: sixloom approve change CH-0001")
+                };
+                let c = loom::approve_change(&root, id)?;
                 println!("{} {} accepted: {}", green("✓"), c.id, c.title);
                 println!("  next: apply it with the sxl-patch skill (spec → looms → tests → code)");
             } else {
-                let by = loom::approve(&root, &cfg, &target)?;
-                println!("{} {target} approved by {by}", green("✓"));
+                let by = loom::approve_many(&root, &cfg, &targets)?;
+                println!("{} {} approved by {by}", green("✓"), targets.join(", "));
                 print_next(&root, &cfg)?;
             }
             Ok(())
@@ -606,17 +615,22 @@ fn cmd_loom(dir: &Option<PathBuf>, c: LoomCmd) -> Result<()> {
             message,
             no_commit,
             approve,
+            all,
             skip_checks,
         } => {
-            let msg = loom::end(
+            let r = loom::end(
                 &root,
                 &cfg,
                 &id,
-                message.as_deref(),
-                !no_commit,
-                skip_checks,
+                loom::EndOpts {
+                    message: message.as_deref(),
+                    commit: !no_commit,
+                    skip_checks,
+                    approve,
+                    all,
+                },
             )?;
-            match msg {
+            match &r.commit {
                 Some(m) => println!("{} committed: {m}", green("✓")),
                 None => println!(
                     "{} {id} in review {}",
@@ -624,9 +638,17 @@ fn cmd_loom(dir: &Option<PathBuf>, c: LoomCmd) -> Result<()> {
                     dim("(nothing committed)")
                 ),
             }
-            if approve {
-                let by = loom::approve(&root, &cfg, &id)?;
+            if let Some(by) = &r.approved_by {
                 println!("{} approved by {by}", green("✓"));
+            }
+            if !r.left_over.is_empty() && !no_commit {
+                println!(
+                    "{} not committed (outside the {id} loom's outputs): {}\n  if this loom changed them on purpose, run: sixloom loom end {id} --all",
+                    yellow("!"),
+                    r.left_over.join(", ")
+                );
+            }
+            if r.approved_by.is_some() {
                 print_next(&root, &cfg)?;
             } else {
                 println!(

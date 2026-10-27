@@ -1,4 +1,4 @@
-# Mock scenario pattern (MSW v2)
+# Mock scenario pattern (MSW 2 and 3)
 
 This pattern is framework-agnostic. For Next.js or Nuxt, start the worker in
 a client-only entry point.
@@ -50,7 +50,8 @@ export const handlers = [
 async function enableMocks() {
   if (import.meta.env.VITE_API_MODE !== 'mock') return;
   const { worker } = await import('./mocks/browser');
-  await worker.start({ onUnhandledRequest: 'warn' });
+  // MSW 3 renamed onUnhandledRequest to onUnhandledFrame; check `npm ls msw`.
+  await worker.start({ onUnhandledFrame: 'bypass', quiet: true });
 }
 enableMocks().then(() => mountApp());
 ```

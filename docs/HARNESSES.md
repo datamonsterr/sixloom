@@ -42,6 +42,9 @@ requests like "sixloom preview" or "build the preview" work everywhere.
 - When `claude` and an `.agents/skills` agent are both selected, OpenCode and
   Kimi see each skill twice (once from `.claude/skills`). Both deduplicate by
   name, so this is harmless.
+- `opencode debug skill | …` can truncate its JSON when stdout is a pipe, so
+  some skills seem to be missing. Redirect it to a file first, as the smoke
+  test does.
 - Subagents (used by `sxl-build` for parallel slices) exist in Claude Code,
   Codex, OpenCode and Kimi. Elsewhere the build runs its slices one after
   another.

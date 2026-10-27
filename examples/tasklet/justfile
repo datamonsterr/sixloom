@@ -1,0 +1,53 @@
+# sixloom task runner: humans, agents and CI all call these targets.
+set dotenv-load := true
+
+default:
+    @just --list
+
+install:
+    cd apps/web && npm ci
+    cd apps/api && npm ci
+    cd tests && npm ci
+    cd docs && npm ci
+
+# Front end on mocks: the product preview
+preview:
+    cd apps/web && npm run preview
+
+# Full stack: web against the real API
+dev:
+    (cd apps/api && npm run dev) & cd apps/web && npm run dev
+
+docs:
+    cd docs && npm run dev
+
+docs-build:
+    cd docs && npm run build && npm run types:check
+
+lint:
+    cd apps/web && npm run lint
+
+typecheck:
+    cd apps/web && npm run typecheck
+    cd apps/api && npm run typecheck
+
+unit:
+    cd apps/api && npm test
+
+check-mocks:
+    npx -y tsx scripts/check-mocks.mjs
+
+contract:
+    cd tests && npx playwright test --project=contract
+
+e2e-mock *args:
+    cd tests && E2E_MODE=mock npx playwright test --project=e2e {{args}}
+
+e2e *args:
+    cd tests && E2E_MODE=real npx playwright test --project=e2e {{args}}
+
+# The fast gate: run this before every push
+ci-fast: lint typecheck unit check-mocks
+    sixloom tests verify
+
+ci: ci-fast contract e2e

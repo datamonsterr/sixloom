@@ -169,16 +169,27 @@ pub fn check(root: &Path, cfg: &Config, id: &str) -> Result<Vec<String>> {
     Ok(p)
 }
 
-pub fn end(
-    root: &Path,
-    cfg: &Config,
-    id: &str,
-    message: Option<&str>,
-    commit: bool,
-    skip_checks: bool,
-) -> Result<Option<String>> {
+#[derive(Default)]
+pub struct EndOpts<'a> {
+    pub message: Option<&'a str>,
+    pub commit: bool,
+    pub skip_checks: bool,
+    /// Record the human's approval in the same commit.
+    pub approve: bool,
+    /// Also commit every other change in the working tree.
+    pub all: bool,
+}
+
+pub struct Ended {
+    pub commit: Option<String>,
+    pub approved_by: Option<String>,
+    /// Changed files that were not committed (outside the loom's outputs).
+    pub left_over: Vec<String>,
+}
+
+pub fn end(root: &Path, cfg: &Config, id: &str, o: EndOpts) -> Result<Ended> {
     let l = loom(id)?;
-    if !skip_checks {
+    if !o.skip_checks {
         let problems = check(root, cfg, id)?;
         if !problems.is_empty() {
             bail!(
@@ -192,17 +203,42 @@ pub fn end(
     e.status = Status::Review;
     e.ended_at = Some(now());
     st.save(root)?;
-    if !commit {
+    let approved_by = if o.approve {
+        Some(approve(root, cfg, id)?)
+    } else {
+        None
+    };
+    if !o.commit {
+        return Ok(Ended {
+            commit: None,
+            approved_by,
+            left_over: vec![],
+        });
+    }
+    let mut paths: Vec<String> = if o.all {
+        vec![".".into()]
+    } else {
+        l.outputs
+            .iter()
+            .map(|o| expand(o, cfg))
+            .chain(["spec".into(), ".sixloom".into()])
+            .collect()
+    };
+    paths.retain(|p| root.join(p).exists());
+    let msg = format!("sxl({id}): {}", o.message.unwrap_or(l.title));
+    let commit = commit_paths(root, &paths, &msg)?;
+    Ok(Ended {
+        commit,
+        approved_by,
+        left_over: changed_files(root),
+    })
+}
+
+/// Stage `paths` and commit them if anything is staged. Returns the message on commit.
+pub fn commit_paths(root: &Path, paths: &[String], msg: &str) -> Result<Option<String>> {
+    if paths.is_empty() {
         return Ok(None);
     }
-    let mut paths: Vec<String> = l
-        .outputs
-        .iter()
-        .map(|o| expand(o, cfg))
-        .filter(|o| root.join(o).exists())
-        .collect();
-    paths.extend(["spec".into(), ".sixloom".into()]);
-    paths.retain(|p| root.join(p).exists());
     git(
         root,
         &[
@@ -211,16 +247,30 @@ pub fn end(
         ]
         .concat(),
     )?;
-    let msg = format!("sxl({id}): {}", message.unwrap_or(l.title));
-    let staged = Command::new("git")
+    let nothing = Command::new("git")
         .args(["diff", "--cached", "--quiet"])
         .current_dir(root)
         .status()?;
-    if staged.success() {
+    if nothing.success() {
         return Ok(None);
     }
-    git(root, &["commit", "-q", "-m", &msg])?;
-    Ok(Some(msg))
+    git(root, &["commit", "-q", "-m", msg])?;
+    Ok(Some(msg.to_string()))
+}
+
+/// Uncommitted, non-ignored paths in the working tree.
+pub fn changed_files(root: &Path) -> Vec<String> {
+    Command::new("git")
+        .args(["status", "--porcelain", "--untracked-files=normal"])
+        .current_dir(root)
+        .output()
+        .map(|o| {
+            String::from_utf8_lossy(&o.stdout)
+                .lines()
+                .filter_map(|l| l.get(3..).map(|p| p.trim_matches('"').to_string()))
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 pub fn approve(root: &Path, cfg: &Config, id: &str) -> Result<String> {
@@ -243,7 +293,34 @@ pub fn approve_change(root: &Path, id: &str) -> Result<change::Change> {
     let by = author(root);
     let c = change::set_status(root, id, "accepted", Some(&by))?;
     change::render_log(root)?;
+    commit_paths(
+        root,
+        &["spec".into()],
+        &format!("sxl(change): accept {} {}", c.id, c.title),
+    )?;
     Ok(c)
+}
+
+/// Approve a loom outside `loom end` and commit the recorded approval.
+pub fn approve_and_commit(root: &Path, cfg: &Config, id: &str) -> Result<String> {
+    approve_many(root, cfg, &[id.to_string()])
+}
+
+/// Approve several looms in one commit. All IDs are checked first, so a typo approves nothing.
+pub fn approve_many(root: &Path, cfg: &Config, ids: &[String]) -> Result<String> {
+    for id in ids {
+        loom(id)?;
+    }
+    let mut by = String::new();
+    for id in ids {
+        by = approve(root, cfg, id)?;
+    }
+    commit_paths(
+        root,
+        &[".sixloom".into()],
+        &format!("sxl({}): approved by {by}", ids.join(",")),
+    )?;
+    Ok(by)
 }
 
 pub fn author(root: &Path) -> String {
@@ -389,7 +466,7 @@ pub fn mark_done(root: &Path, cfg: &Config) -> Result<String> {
     if !failing.is_empty() {
         bail!("not done yet:\n  - {}", failing.join("\n  - "));
     }
-    approve(root, cfg, "validate")
+    approve_and_commit(root, cfg, "validate")
 }
 
 #[cfg(test)]
@@ -410,7 +487,7 @@ mod tests {
         );
         start(root, &cfg, "spec", false).unwrap();
         assert!(
-            end(root, &cfg, "spec", None, false, false).is_err(),
+            end(root, &cfg, "spec", EndOpts::default()).is_err(),
             "no SPEC.md yet"
         );
         fs::write(
@@ -418,7 +495,7 @@ mod tests {
             "### F-001 A\n- **Priority**: must\n- **F-001.AC1** Given x, then y.\n",
         )
         .unwrap();
-        end(root, &cfg, "spec", None, false, false).unwrap();
+        end(root, &cfg, "spec", EndOpts::default()).unwrap();
         approve(root, &cfg, "spec").unwrap();
         let pack = start(root, &cfg, "design", false).unwrap();
         assert_eq!(pack.files.len(), 1);
@@ -431,7 +508,7 @@ mod tests {
             "## S-01 A\n| x | F-001.AC1 |\n",
         )
         .unwrap();
-        end(root, &cfg, "design", None, false, false).unwrap();
+        end(root, &cfg, "design", EndOpts::default()).unwrap();
         approve(root, &cfg, "design").unwrap();
         let st = State::load(root).unwrap();
         assert_eq!(st.view(root, &cfg, loom("design").unwrap()), View::Approved);
@@ -443,7 +520,19 @@ mod tests {
         assert_eq!(st.view(root, &cfg, loom("design").unwrap()), View::Stale);
         assert_eq!(
             state::changed_inputs(root, &cfg, loom("design").unwrap(), &st),
-            vec!["spec/SPEC.md"]
+            vec!["spec/SPEC.md#F-001"]
+        );
+        // Adding a feature names only the new section.
+        approve(root, &cfg, "design").unwrap();
+        let st = State::load(root).unwrap();
+        fs::write(
+            root.join("spec/SPEC.md"),
+            "### F-001 A\n- **F-001.AC1** Given x, then z.\n### F-002 B\n- **F-002.AC1** Given y, then w.\n",
+        )
+        .unwrap();
+        assert_eq!(
+            state::changed_inputs(root, &cfg, loom("design").unwrap(), &st),
+            vec!["spec/SPEC.md#F-002"]
         );
         assert_eq!(next(root, &cfg).unwrap()[0].0.id, "design");
         assert!(!done_checks(root, &cfg).unwrap()[0].ok);
