@@ -1,0 +1,6 @@
+{
+  "source": "github:vercel-labs/agent-skills@6ec269328bc400712ee225a173a14b6b29128df7",
+  "path": "skills/web-design-guidelines",
+  "license": "MIT",
+  "patch": []
+}

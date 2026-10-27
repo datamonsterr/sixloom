@@ -1,0 +1,228 @@
+# sixloom skill catalog: the single source of truth for packs, skills,
+# upstream provenance and which project choices install which skill.
+#
+# Pack IDs double as other-skill (https://github.com/datamonsterr/other-skill)
+# category IDs, so `sixloom init --bank` can write a routable bank.
+#
+# `when` decides native installation at `sixloom init`:
+#   "always"                 core of the framework
+#   "frontend:<id>"          sixloom.toml frontend.framework
+#   "ui:<id>"                sixloom.toml frontend.ui_kit
+#   "docs:<id>"              sixloom.toml docs.engine
+#   "design:<id>"            sixloom.toml design.tool
+#   a list means any-of. Skills whose `when` does not match go to the bank
+#   (with --bank) or are skipped.
+#
+# `upstream` skills are vendored by scripts/vendor_skills.py at the pinned git `rev`
+# (`repo`) or pinned npm package version (`npm`).
+# `patch` lists the edits sixloom makes on top of upstream (applied by the script).
+
+version = 1
+
+[[pack]]
+id = "core"
+title = "sixloom core"
+description = "The sixloom looms: spec, design, preview, data model, system design, API docs, test suites, autonomous build, patch and validate"
+
+[[pack]]
+id = "engineering"
+title = "Engineering"
+description = "Test-driven development, design interviews (grilling) and bug diagnosis"
+
+[[pack]]
+id = "design"
+title = "Design"
+description = "Visual direction, design systems and screen generation with Claude Design or Google Stitch"
+
+[[pack]]
+id = "frontend"
+title = "Front-end frameworks"
+description = "Framework-specific guidance for React, Next.js, Vue, Nuxt, Vite, Svelte and shadcn/ui"
+
+[[pack]]
+id = "docs"
+title = "Documentation engines"
+description = "Docs sites with MDX, Mermaid and generated OpenAPI references: Fumadocs, Docusaurus, Starlight"
+
+[[pack]]
+id = "testing"
+title = "Testing"
+description = "Browser automation and end-to-end testing with Playwright, and unit testing with Vitest"
+
+# ---------------------------------------------------------------- core
+[[skill]]
+name = "sixloom"
+pack = "core"
+when = "always"
+[[skill]]
+name = "sxl-loom"
+pack = "core"
+when = "always"
+[[skill]]
+name = "sxl-specify"
+pack = "core"
+when = "always"
+[[skill]]
+name = "sxl-design"
+pack = "core"
+when = "always"
+[[skill]]
+name = "sxl-preview"
+pack = "core"
+when = "always"
+[[skill]]
+name = "sxl-data-model"
+pack = "core"
+when = "always"
+[[skill]]
+name = "sxl-system-design"
+pack = "core"
+when = "always"
+[[skill]]
+name = "sxl-api-docs"
+pack = "core"
+when = "always"
+[[skill]]
+name = "sxl-test-suites"
+pack = "core"
+when = "always"
+[[skill]]
+name = "sxl-build"
+pack = "core"
+when = "always"
+[[skill]]
+name = "sxl-patch"
+pack = "core"
+when = "always"
+[[skill]]
+name = "sxl-validate"
+pack = "core"
+when = "always"
+
+# ---------------------------------------------------------------- engineering
+[[skill]]
+name = "sxl-tdd"
+pack = "engineering"
+when = "always"
+ported_from = { repo = "mattpocock/skills", rev = "59db609eb1e18aaf59b63284d0e52255aff0c63c", path = "skills/engineering/tdd", license = "MIT" }
+
+[[skill]]
+name = "grilling"
+pack = "engineering"
+when = "always"
+upstream = { repo = "mattpocock/skills", rev = "59db609eb1e18aaf59b63284d0e52255aff0c63c", path = "skills/productivity/grilling", license = "MIT" }
+
+[[skill]]
+name = "diagnosing-bugs"
+pack = "engineering"
+when = "always"
+upstream = { repo = "mattpocock/skills", rev = "59db609eb1e18aaf59b63284d0e52255aff0c63c", path = "skills/engineering/diagnosing-bugs", license = "MIT" }
+
+# ---------------------------------------------------------------- design
+[[skill]]
+name = "frontend-design"
+pack = "design"
+when = "always"
+upstream = { repo = "anthropics/skills", rev = "dbd4588f9e1033efb41dad4bef2f7947c8993d44", path = "skills/frontend-design", license = "Apache-2.0" }
+
+[[skill]]
+name = "web-design-guidelines"
+pack = "design"
+when = "always"
+upstream = { repo = "vercel-labs/agent-skills", rev = "6ec269328bc400712ee225a173a14b6b29128df7", path = "skills/web-design-guidelines", license = "MIT" }
+
+[[skill]]
+name = "stitch"
+pack = "design"
+when = "design:stitch"
+upstream = { npm = "@google/stitch@0.12.0", path = "skills/design/stitch", license = "Apache-2.0" }
+
+[[skill]]
+name = "taste-design"
+pack = "design"
+when = "design:stitch"
+upstream = { repo = "google-labs-code/stitch-skills", rev = "0337446dadde6f8c94210444e2aa9d546126480f", path = "plugins/stitch-utilities/skills/taste-design", license = "Apache-2.0" }
+
+# ---------------------------------------------------------------- frontend
+[[skill]]
+name = "vercel-react-best-practices"
+pack = "frontend"
+when = ["frontend:react-vite", "frontend:nextjs"]
+upstream = { repo = "vercel-labs/agent-skills", rev = "6ec269328bc400712ee225a173a14b6b29128df7", path = "skills/react-best-practices", license = "MIT" }
+
+[[skill]]
+name = "vercel-composition-patterns"
+pack = "frontend"
+when = ["frontend:react-vite", "frontend:nextjs"]
+upstream = { repo = "vercel-labs/agent-skills", rev = "6ec269328bc400712ee225a173a14b6b29128df7", path = "skills/composition-patterns", license = "MIT" }
+
+[[skill]]
+name = "shadcn-ui"
+pack = "frontend"
+when = "ui:shadcn"
+upstream = { repo = "google-labs-code/stitch-skills", rev = "0337446dadde6f8c94210444e2aa9d546126480f", path = "plugins/stitch-build/skills/shadcn-ui", license = "Apache-2.0" }
+
+[[skill]]
+name = "vite"
+pack = "frontend"
+when = ["frontend:react-vite", "frontend:vue"]
+upstream = { repo = "antfu/skills", rev = "8886fe2d385d3644cbb47e46ae9cb1cf09307d3b", path = "skills/vite", license = "MIT" }
+
+[[skill]]
+name = "vue"
+pack = "frontend"
+when = ["frontend:vue", "frontend:nuxt"]
+upstream = { repo = "antfu/skills", rev = "8886fe2d385d3644cbb47e46ae9cb1cf09307d3b", path = "skills/vue", license = "MIT" }
+
+[[skill]]
+name = "nuxt"
+pack = "frontend"
+when = "frontend:nuxt"
+upstream = { repo = "antfu/skills", rev = "8886fe2d385d3644cbb47e46ae9cb1cf09307d3b", path = "skills/nuxt", license = "MIT" }
+
+[[skill]]
+name = "svelte-code-writer"
+pack = "frontend"
+when = "frontend:sveltekit"
+upstream = { repo = "sveltejs/ai-tools", rev = "0004b5b8d40676bcf25d3abd53a2ec398d5bbede", path = "tools/skills/svelte-code-writer", license = "MIT" }
+
+[[skill]]
+name = "svelte-core-bestpractices"
+pack = "frontend"
+when = "frontend:sveltekit"
+upstream = { repo = "sveltejs/ai-tools", rev = "0004b5b8d40676bcf25d3abd53a2ec398d5bbede", path = "tools/skills/svelte-core-bestpractices", license = "MIT" }
+
+# ---------------------------------------------------------------- docs
+[[skill]]
+name = "sxl-docs-fumadocs"
+pack = "docs"
+when = "docs:fumadocs"
+
+[[skill]]
+name = "sxl-docs-docusaurus"
+pack = "docs"
+when = "docs:docusaurus"
+
+[[skill]]
+name = "sxl-docs-starlight"
+pack = "docs"
+when = "docs:starlight"
+
+# ---------------------------------------------------------------- testing
+[[skill]]
+name = "playwright-cli"
+pack = "testing"
+when = "always"
+upstream = { repo = "microsoft/playwright-cli", rev = "b1a5903c5b633b8c9f843ad7b629c2a78437040c", path = "skills/playwright-cli", license = "Apache-2.0" }
+
+[[skill]]
+name = "webapp-testing"
+pack = "testing"
+when = []
+upstream = { repo = "anthropics/skills", rev = "dbd4588f9e1033efb41dad4bef2f7947c8993d44", path = "skills/webapp-testing", license = "Apache-2.0" }
+
+[[skill]]
+name = "vitest"
+pack = "testing"
+when = ["frontend:react-vite", "frontend:vue", "frontend:nuxt", "frontend:sveltekit"]
+upstream = { repo = "antfu/skills", rev = "8886fe2d385d3644cbb47e46ae9cb1cf09307d3b", path = "skills/vitest", license = "MIT" }

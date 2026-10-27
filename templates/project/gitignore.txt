@@ -1,0 +1,6 @@
+# sixloom
+node_modules/
+apps/web/.preview-shots/
+test-results/
+playwright-report/
+.otherskill/cache/

@@ -1,0 +1,33 @@
+{
+  "name": "sixloom",
+  "version": "0.1.0",
+  "description": "The sixloom looms: spec, design, preview, data model, system design, API docs, test suites, autonomous build, patch and validate",
+  "author": {
+    "name": "datamonsterr",
+    "url": "https://github.com/datamonsterr"
+  },
+  "homepage": "https://github.com/datamonsterr/sixloom",
+  "repository": "https://github.com/datamonsterr/sixloom",
+  "license": "MIT",
+  "keywords": [
+    "sixloom",
+    "core"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "sixloom",
+    "shortDescription": "The sixloom looms: spec, design, preview, data model, system design, API docs, t",
+    "developerName": "datamonsterr",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/datamonsterr/sixloom",
+    "defaultPrompt": [
+      "sixloom init",
+      "sixloom status",
+      "sixloom next"
+    ]
+  }
+}

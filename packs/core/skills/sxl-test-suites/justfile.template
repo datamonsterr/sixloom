@@ -1,0 +1,49 @@
+# sixloom task runner: humans, agents and CI all call these targets.
+# Replace the <...> commands with the ones for your stack (see system-design ADRs).
+
+set dotenv-load := true
+
+default:
+    @just --list
+
+# ---- dev ---------------------------------------------------------------
+# Front end on mocks: the product preview
+preview:
+    cd apps/web && VITE_API_MODE=mock <pnpm dev>
+
+# Full stack: web against the real API
+dev:
+    <docker compose up -d db>
+    <cd apps/api && run dev> &
+    cd apps/web && VITE_API_MODE=real <pnpm dev>
+
+docs:
+    cd docs && <pnpm dev>
+
+# ---- checks ------------------------------------------------------------
+lint:
+    cd apps/web && <pnpm lint>
+    cd apps/api && <lint>
+
+typecheck:
+    cd apps/web && <pnpm typecheck>
+    cd apps/api && <typecheck>
+
+unit:
+    cd apps/web && <pnpm test --run>
+    cd apps/api && <test>
+
+contract:
+    <start api in test mode> && <pnpm -C tests playwright test contract integration>
+
+e2e-mock *args:
+    E2E_MODE=mock <pnpm -C tests playwright test e2e> {{args}}
+
+e2e *args:
+    E2E_MODE=real <pnpm -C tests playwright test e2e> {{args}}
+
+# The fast gate: run this before every push
+ci-fast: lint typecheck unit
+    sixloom tests verify
+
+ci: ci-fast contract e2e

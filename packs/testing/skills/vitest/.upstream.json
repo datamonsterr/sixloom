@@ -1,0 +1,6 @@
+{
+  "source": "github:antfu/skills@8886fe2d385d3644cbb47e46ae9cb1cf09307d3b",
+  "path": "skills/vitest",
+  "license": "MIT",
+  "patch": []
+}

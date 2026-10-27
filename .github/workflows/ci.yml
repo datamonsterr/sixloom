@@ -1,0 +1,48 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with: { components: 'rustfmt, clippy' }
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
+
+  packs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Plugin manifests match the catalog
+        run: python3 -I scripts/gen_plugins.py --check
+      - name: Vendored skills match their pinned upstreams
+        run: python3 -I scripts/vendor_skills.py --check
+
+  harnesses:
+    # Real agent CLIs discover the skills `sixloom init` installs (offline, no API keys).
+    runs-on: ubuntu-latest
+    needs: rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - uses: astral-sh/setup-uv@v6
+      - run: npm i -g @anthropic-ai/claude-code
+      - run: cargo build
+      - run: scripts/smoke-harnesses.sh target/debug/sixloom

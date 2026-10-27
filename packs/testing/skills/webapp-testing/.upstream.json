@@ -1,0 +1,6 @@
+{
+  "source": "github:anthropics/skills@dbd4588f9e1033efb41dad4bef2f7947c8993d44",
+  "path": "skills/webapp-testing",
+  "license": "Apache-2.0",
+  "patch": []
+}

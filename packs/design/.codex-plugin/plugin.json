@@ -1,0 +1,29 @@
+{
+  "name": "sixloom-design",
+  "version": "0.1.0",
+  "description": "Visual direction, design systems and screen generation with Claude Design or Google Stitch",
+  "author": {
+    "name": "datamonsterr",
+    "url": "https://github.com/datamonsterr"
+  },
+  "homepage": "https://github.com/datamonsterr/sixloom",
+  "repository": "https://github.com/datamonsterr/sixloom",
+  "license": "MIT",
+  "keywords": [
+    "sixloom",
+    "design"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Design",
+    "shortDescription": "Visual direction, design systems and screen generation with Claude Design or Goo",
+    "developerName": "datamonsterr",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/datamonsterr/sixloom",
+    "defaultPrompt": []
+  }
+}

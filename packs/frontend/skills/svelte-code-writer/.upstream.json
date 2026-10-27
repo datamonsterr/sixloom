@@ -1,0 +1,6 @@
+{
+  "source": "github:sveltejs/ai-tools@0004b5b8d40676bcf25d3abd53a2ec398d5bbede",
+  "path": "tools/skills/svelte-code-writer",
+  "license": "MIT",
+  "patch": []
+}

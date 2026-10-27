@@ -1,0 +1,294 @@
+{
+  "name": "sixloom",
+  "owner": {
+    "name": "datamonsterr",
+    "url": "https://github.com/datamonsterr"
+  },
+  "metadata": {
+    "description": "sixloom: spec \u2192 preview \u2192 API docs \u2192 autonomous TDD build, as skills for coding agents.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "sixloom",
+      "source": "./",
+      "strict": false,
+      "description": "The sixloom loom workflow: spec, UI design, preview, data model, system design, API docs, locked test suites, autonomous TDD build, patch and validate.",
+      "version": "0.1.0",
+      "author": {
+        "name": "datamonsterr",
+        "url": "https://github.com/datamonsterr"
+      },
+      "homepage": "https://github.com/datamonsterr/sixloom",
+      "license": "MIT",
+      "category": "development",
+      "keywords": [
+        "sixloom",
+        "spec-driven",
+        "tdd",
+        "agents"
+      ],
+      "skills": [
+        "./packs/core/skills/sixloom",
+        "./packs/core/skills/sxl-loom",
+        "./packs/core/skills/sxl-specify",
+        "./packs/core/skills/sxl-design",
+        "./packs/core/skills/sxl-preview",
+        "./packs/core/skills/sxl-data-model",
+        "./packs/core/skills/sxl-system-design",
+        "./packs/core/skills/sxl-api-docs",
+        "./packs/core/skills/sxl-test-suites",
+        "./packs/core/skills/sxl-build",
+        "./packs/core/skills/sxl-patch",
+        "./packs/core/skills/sxl-validate",
+        "./packs/engineering/skills/sxl-tdd",
+        "./packs/engineering/skills/grilling",
+        "./packs/engineering/skills/diagnosing-bugs",
+        "./packs/design/skills/frontend-design",
+        "./packs/design/skills/web-design-guidelines",
+        "./packs/testing/skills/playwright-cli"
+      ]
+    },
+    {
+      "name": "sixloom-react",
+      "source": "./",
+      "strict": false,
+      "description": "sixloom front-end skills for React + Vite (Vercel React guides, Vite, Vitest).",
+      "version": "0.1.0",
+      "author": {
+        "name": "datamonsterr",
+        "url": "https://github.com/datamonsterr"
+      },
+      "homepage": "https://github.com/datamonsterr/sixloom",
+      "license": "MIT",
+      "category": "development",
+      "keywords": [
+        "sixloom",
+        "spec-driven",
+        "tdd",
+        "agents"
+      ],
+      "skills": [
+        "./packs/frontend/skills/vercel-react-best-practices",
+        "./packs/frontend/skills/vercel-composition-patterns",
+        "./packs/frontend/skills/vite",
+        "./packs/testing/skills/vitest"
+      ]
+    },
+    {
+      "name": "sixloom-nextjs",
+      "source": "./",
+      "strict": false,
+      "description": "sixloom front-end skills for Next.js (Vercel React and composition guides).",
+      "version": "0.1.0",
+      "author": {
+        "name": "datamonsterr",
+        "url": "https://github.com/datamonsterr"
+      },
+      "homepage": "https://github.com/datamonsterr/sixloom",
+      "license": "MIT",
+      "category": "development",
+      "keywords": [
+        "sixloom",
+        "spec-driven",
+        "tdd",
+        "agents"
+      ],
+      "skills": [
+        "./packs/frontend/skills/vercel-react-best-practices",
+        "./packs/frontend/skills/vercel-composition-patterns"
+      ]
+    },
+    {
+      "name": "sixloom-vue",
+      "source": "./",
+      "strict": false,
+      "description": "sixloom front-end skills for Vue 3 + Vite (antfu's Vue, Vite and Vitest skills).",
+      "version": "0.1.0",
+      "author": {
+        "name": "datamonsterr",
+        "url": "https://github.com/datamonsterr"
+      },
+      "homepage": "https://github.com/datamonsterr/sixloom",
+      "license": "MIT",
+      "category": "development",
+      "keywords": [
+        "sixloom",
+        "spec-driven",
+        "tdd",
+        "agents"
+      ],
+      "skills": [
+        "./packs/frontend/skills/vite",
+        "./packs/frontend/skills/vue",
+        "./packs/testing/skills/vitest"
+      ]
+    },
+    {
+      "name": "sixloom-nuxt",
+      "source": "./",
+      "strict": false,
+      "description": "sixloom front-end skills for Nuxt (antfu's Vue, Nuxt and Vitest skills).",
+      "version": "0.1.0",
+      "author": {
+        "name": "datamonsterr",
+        "url": "https://github.com/datamonsterr"
+      },
+      "homepage": "https://github.com/datamonsterr/sixloom",
+      "license": "MIT",
+      "category": "development",
+      "keywords": [
+        "sixloom",
+        "spec-driven",
+        "tdd",
+        "agents"
+      ],
+      "skills": [
+        "./packs/frontend/skills/vue",
+        "./packs/frontend/skills/nuxt",
+        "./packs/testing/skills/vitest"
+      ]
+    },
+    {
+      "name": "sixloom-svelte",
+      "source": "./",
+      "strict": false,
+      "description": "sixloom front-end skills for SvelteKit (official Svelte skills).",
+      "version": "0.1.0",
+      "author": {
+        "name": "datamonsterr",
+        "url": "https://github.com/datamonsterr"
+      },
+      "homepage": "https://github.com/datamonsterr/sixloom",
+      "license": "MIT",
+      "category": "development",
+      "keywords": [
+        "sixloom",
+        "spec-driven",
+        "tdd",
+        "agents"
+      ],
+      "skills": [
+        "./packs/frontend/skills/svelte-code-writer",
+        "./packs/frontend/skills/svelte-core-bestpractices",
+        "./packs/testing/skills/vitest"
+      ]
+    },
+    {
+      "name": "sixloom-shadcn",
+      "source": "./",
+      "strict": false,
+      "description": "shadcn/ui component guidance for sixloom React front ends.",
+      "version": "0.1.0",
+      "author": {
+        "name": "datamonsterr",
+        "url": "https://github.com/datamonsterr"
+      },
+      "homepage": "https://github.com/datamonsterr/sixloom",
+      "license": "MIT",
+      "category": "development",
+      "keywords": [
+        "sixloom",
+        "spec-driven",
+        "tdd",
+        "agents"
+      ],
+      "skills": [
+        "./packs/frontend/skills/shadcn-ui"
+      ]
+    },
+    {
+      "name": "sixloom-fumadocs",
+      "source": "./",
+      "strict": false,
+      "description": "sixloom docs site with Fumadocs: MDX, Mermaid and a generated OpenAPI reference.",
+      "version": "0.1.0",
+      "author": {
+        "name": "datamonsterr",
+        "url": "https://github.com/datamonsterr"
+      },
+      "homepage": "https://github.com/datamonsterr/sixloom",
+      "license": "MIT",
+      "category": "development",
+      "keywords": [
+        "sixloom",
+        "spec-driven",
+        "tdd",
+        "agents"
+      ],
+      "skills": [
+        "./packs/docs/skills/sxl-docs-fumadocs"
+      ]
+    },
+    {
+      "name": "sixloom-docusaurus",
+      "source": "./",
+      "strict": false,
+      "description": "sixloom docs site with Docusaurus: MDX, Mermaid and a generated OpenAPI reference.",
+      "version": "0.1.0",
+      "author": {
+        "name": "datamonsterr",
+        "url": "https://github.com/datamonsterr"
+      },
+      "homepage": "https://github.com/datamonsterr/sixloom",
+      "license": "MIT",
+      "category": "development",
+      "keywords": [
+        "sixloom",
+        "spec-driven",
+        "tdd",
+        "agents"
+      ],
+      "skills": [
+        "./packs/docs/skills/sxl-docs-docusaurus"
+      ]
+    },
+    {
+      "name": "sixloom-starlight",
+      "source": "./",
+      "strict": false,
+      "description": "sixloom docs site with Astro Starlight: MDX, Mermaid and a generated OpenAPI reference.",
+      "version": "0.1.0",
+      "author": {
+        "name": "datamonsterr",
+        "url": "https://github.com/datamonsterr"
+      },
+      "homepage": "https://github.com/datamonsterr/sixloom",
+      "license": "MIT",
+      "category": "development",
+      "keywords": [
+        "sixloom",
+        "spec-driven",
+        "tdd",
+        "agents"
+      ],
+      "skills": [
+        "./packs/docs/skills/sxl-docs-starlight"
+      ]
+    },
+    {
+      "name": "sixloom-stitch",
+      "source": "./",
+      "strict": false,
+      "description": "Google Stitch design workflow for the sixloom UI design loom (official stitch CLI skill).",
+      "version": "0.1.0",
+      "author": {
+        "name": "datamonsterr",
+        "url": "https://github.com/datamonsterr"
+      },
+      "homepage": "https://github.com/datamonsterr/sixloom",
+      "license": "MIT",
+      "category": "development",
+      "keywords": [
+        "sixloom",
+        "spec-driven",
+        "tdd",
+        "agents"
+      ],
+      "skills": [
+        "./packs/design/skills/stitch",
+        "./packs/design/skills/taste-design"
+      ]
+    }
+  ]
+}

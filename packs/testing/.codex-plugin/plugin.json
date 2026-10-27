@@ -1,0 +1,29 @@
+{
+  "name": "sixloom-testing",
+  "version": "0.1.0",
+  "description": "Browser automation and end-to-end testing with Playwright, and unit testing with Vitest",
+  "author": {
+    "name": "datamonsterr",
+    "url": "https://github.com/datamonsterr"
+  },
+  "homepage": "https://github.com/datamonsterr/sixloom",
+  "repository": "https://github.com/datamonsterr/sixloom",
+  "license": "MIT",
+  "keywords": [
+    "sixloom",
+    "testing"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Testing",
+    "shortDescription": "Browser automation and end-to-end testing with Playwright, and unit testing with",
+    "developerName": "datamonsterr",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/datamonsterr/sixloom",
+    "defaultPrompt": []
+  }
+}

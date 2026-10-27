@@ -1,0 +1,30 @@
+[package]
+name = "sixloom"
+version = "0.1.0"
+edition = "2021"
+description = "sixloom: a spec-to-product framework for coding agents (CLI + TUI)"
+license = "MIT"
+repository = "https://github.com/datamonsterr/sixloom"
+readme = "../README.md"
+
+[[bin]]
+name = "sixloom"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+clap = { version = "4.6", features = ["derive", "env", "wrap_help"] }
+crossterm = "0.29"
+include_dir = "0.7"
+ratatui = "0.30"
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+sha2 = "0.10"
+toml = "0.9"
+walkdir = "2"
+
+[dev-dependencies]
+tempfile = "3"

@@ -1,0 +1,29 @@
+{
+  "name": "sixloom-docs",
+  "version": "0.1.0",
+  "description": "Docs sites with MDX, Mermaid and generated OpenAPI references: Fumadocs, Docusaurus, Starlight",
+  "author": {
+    "name": "datamonsterr",
+    "url": "https://github.com/datamonsterr"
+  },
+  "homepage": "https://github.com/datamonsterr/sixloom",
+  "repository": "https://github.com/datamonsterr/sixloom",
+  "license": "MIT",
+  "keywords": [
+    "sixloom",
+    "docs"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Documentation engines",
+    "shortDescription": "Docs sites with MDX, Mermaid and generated OpenAPI references: Fumadocs, Docusau",
+    "developerName": "datamonsterr",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/datamonsterr/sixloom",
+    "defaultPrompt": []
+  }
+}

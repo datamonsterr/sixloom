@@ -1,0 +1,6 @@
+{
+  "source": "npm:@google/stitch@0.12.0",
+  "path": "skills/design/stitch",
+  "license": "Apache-2.0",
+  "patch": []
+}

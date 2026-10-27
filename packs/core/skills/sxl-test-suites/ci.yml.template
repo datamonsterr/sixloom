@@ -1,0 +1,111 @@
+# sixloom CI: every step calls a `just` target, so a red job reproduces locally.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.f.outputs.web }}
+      api: ${{ steps.f.outputs.api }}
+      tests: ${{ steps.f.outputs.tests }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: f
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            web: ['apps/web/**', 'contracts/**']
+            api: ['apps/api/**', 'contracts/**']
+            tests: ['tests/**', '.sixloom/tests.lock', 'spec/**']
+
+  locks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@v2
+        with: { tool: 'just' }
+      - run: curl -fsSL https://raw.githubusercontent.com/datamonsterr/sixloom/main/install.sh | sh
+      - name: Locked acceptance tests unchanged
+        run: sixloom tests verify
+
+  web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: { check: [lint, typecheck, unit] }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@v2
+        with: { tool: 'just' }
+      # <setup toolchain + cache, e.g. pnpm/action-setup + actions/setup-node with cache: pnpm>
+      - run: just ${{ matrix.check }}
+
+  api:
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@v2
+        with: { tool: 'just' }
+      # <setup backend toolchain + cache>
+      - run: just lint typecheck unit
+
+  contract:
+    needs: changes
+    if: needs.changes.outputs.api == 'true' || needs.changes.outputs.tests == 'true'
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:16
+        env: { POSTGRES_PASSWORD: postgres }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@v2
+        with: { tool: 'just' }
+      # <setup toolchains + cache>
+      - run: just contract
+
+  e2e:
+    needs: changes
+    if: needs.changes.outputs.web == 'true' || needs.changes.outputs.api == 'true' || needs.changes.outputs.tests == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: { shard: [1, 2, 3, 4] }
+    services:
+      db:
+        image: postgres:16
+        env: { POSTGRES_PASSWORD: postgres }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@v2
+        with: { tool: 'just' }
+      # <setup toolchains + cache>
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('tests/package.json') }}
+      - run: just e2e --shard=${{ matrix.shard }}/4
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-${{ matrix.shard }}
+          path: tests/test-results/
+          retention-days: 7
